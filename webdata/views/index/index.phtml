@@ -1,28 +1,21 @@
-<?php
-$entities = Entity::search(array('date' => $this->current_date));
-$units = Unit::search(1)->searchIn('oid', $entities->toArray('oid'))->toArray('name');
-?>
 <?= $this->partial('common/header.phtml', $this) ?>
-日期：<?= $this->current_date ?>
-<table class="table">
-    <thead>
-        <tr>
-            <th>類型</th>
-            <th>機關名稱</th>
-            <th>代碼</th>
-            <th>標案名稱</th>
-        </tr>
-    </thead>
-    <tbody>
-    <?php foreach ($entities as $entity) { ?>
-    <?php $brief = json_decode($entity->brief) ?>
-    <tr>
-        <td><?= $this->escape($brief->type) ?></td>
-        <td><a href="/index/unit/<?= urlencode($entity->oid) ?>"><?= $this->escape($units[$entity->oid]) ?></a></td>
-        <td><?= $this->escape($entity->job_number) ?></td>
-        <td><a href="<?= $this->escape($entity->link()) ?>"><?= $this->escape($brief->title) ?></a></td>
-    </tr>
-    <?php } ?>
-    </tbody>
-</table>
+<h1>標案資料瀏覽</h1>
+<p>
+這邊的目標是要把 <a href="https://web.pcc.gov.tw">中華民國政府電子採購網</a> 的資料，能夠以更簡潔方便的方式顯示，以便更容易讓政府採購的資料產生價值。
+</p>
+<h1>使用方式</h1>
+<ul>
+    <li>可以透過日期瀏覽當日所有公告，Ex：<a href="/index/date/20171101">2017/11/1</a></li>
+    <li>可以透過機關瀏覽所有標案，Ex：<a href="/index/unit/A.27">科技部</a></li>
+    <li>可以瀏覽標案內容，Ex：<a href="/index/case/3.79/1050204S0015/20160318/BDM-1-51801406">智慧支付整合平台建置委外服務採購案</a></li>
+</ul>
+<h1>資料情況</h1>
+<ul>
+    <?php $date = Entity::search(1)->max('date')->date; ?>
+    <li>最新資料時間：<a href="/index/date/<?= $date ?>"><?= $date ?></a></li>
+    <?php $date = Entity::search(1)->min('date')->date; ?>
+    <li>最舊資料時間：<a href="/index/date/<?= $date ?>"><?= $date ?></a></li>
+    <li>公告數：<?= count(Entity::search(1)) ?></li>
+</ul>
+
 <?= $this->partial('common/footer.phtml', $this) ?>

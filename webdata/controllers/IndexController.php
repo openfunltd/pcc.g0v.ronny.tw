@@ -7,6 +7,16 @@ class IndexController extends Pix_Controller
         $this->view->current_date = Entity::search(1)->max('date')->date;
     }
 
+    public function dateAction()
+    {
+        $terms = explode('/', $this->getURI());
+        $date = intval($terms[3]);
+        if (!checkdate(substr($date, 4, 2), substr($date, 6), substr($date, 0, 4))) {
+            return $this->alert('/');
+        }
+        $this->view->current_date = $date;
+    }
+
     public function caseAction()
     {
         $terms = explode('/', $this->getURI());

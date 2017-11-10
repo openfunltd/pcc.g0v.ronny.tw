@@ -1,0 +1,28 @@
+<?php
+$entities = Entity::search(array('date' => $this->current_date));
+$units = Unit::search(1)->searchIn('oid', $entities->toArray('oid'))->toArray('name');
+?>
+<?= $this->partial('common/header.phtml', $this) ?>
+日期：<?= $this->current_date ?>
+<table class="table">
+    <thead>
+        <tr>
+            <th>類型</th>
+            <th>機關名稱</th>
+            <th>代碼</th>
+            <th>標案名稱</th>
+        </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($entities as $entity) { ?>
+    <?php $brief = json_decode($entity->brief) ?>
+    <tr>
+        <td><?= $this->escape($brief->type) ?></td>
+        <td><a href="/index/unit/<?= urlencode($entity->oid) ?>"><?= $this->escape($units[$entity->oid]) ?></a></td>
+        <td><?= $this->escape($entity->job_number) ?></td>
+        <td><a href="<?= $this->escape($entity->link()) ?>"><?= $this->escape($brief->title) ?></a></td>
+    </tr>
+    <?php } ?>
+    </tbody>
+</table>
+<?= $this->partial('common/footer.phtml', $this) ?>
