@@ -1,0 +1,23 @@
+<?= $this->partial('common/header.phtml', $this) ?>
+<h1>機關：<?= $this->escape($this->unit->name) ?></h1>
+<h2>標案編號：<?= $this->escape($this->job_number) ?></h2>
+<table class="table">
+<ul>
+    <?php foreach ($this->entities as $entity) { ?>
+    <li>
+    <?= $this->escape($entity->date) ?> <a href="<?= $this->escape($entity->link()) ?>"><?= $this->escape($entity->getBrief('type')) ?></a>
+    </li>
+
+    <?php } ?>
+</ul>
+<?php if ($this->entity) { ?>
+<table class="table">
+    <?php foreach ($this->entity->getData() as $k => $v) { ?>
+    <tr>
+        <th><?= $this->escape($k) ?></th>
+        <td><?= $this->escape($v) ?></th>
+    </tr>
+    <?php } ?>
+</table>
+<?php } ?>
+<?= $this->partial('common/footer.phtml', $this) ?>
