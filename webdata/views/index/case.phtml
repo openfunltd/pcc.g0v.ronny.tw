@@ -15,7 +15,13 @@
     <?php foreach ($this->entity->getData() as $k => $v) { ?>
     <tr>
         <th><?= $this->escape($k) ?></th>
-        <td><?= $this->escape($v) ?></th>
+        <td>
+            <?php if ($k == 'url') { ?>
+            <a href="<?= $this->escape($v) ?>"><?= $this->escape($v) ?></a>
+            <?php } else { ?>
+            <?= $this->escape($v) ?>
+            <?php } ?>
+        </td>
     </tr>
     <?php } ?>
 </table>
