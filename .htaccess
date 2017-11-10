@@ -1,0 +1,5 @@
+RewriteEngine on
+RewriteBase /
+RewriteRule static/ - [L]
+RewriteRule robots.txt - [L]
+RewriteRule .* index.php
