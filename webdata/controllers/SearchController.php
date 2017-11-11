@@ -32,13 +32,21 @@ class SearchController extends Pix_Controller
         $result->total_pages = ceil($ret->hits->total / 100);
         $result->took = 0;
         $match_ids = array();
+        $unit_oids = array();
         foreach ($ret->hits->hits as $hit) {
             $match_ids[] = explode('-', $hit->_id, 2);
+            $unit_oids[$hit->_source->oid] = $hit->_source->oid;
+        }
+        foreach (Unit::search(1)->searchIn('oid', array_keys($unit_oids)) as $unit) {
+            $unit_oids[$unit->oid] = $unit->name;
         }
         $result->records = array();
         foreach (Entity::search(1)->searchIn(array('date', 'filename'), $match_ids) as $entity) {
             $record = $entity->toArray();
             $record['brief'] = json_decode($record['brief']);
+            $record['unit_name'] = $unit_oids[$record['oid']];
+            $record['unit_url'] = '/index/unit/' . urlencode($record['oid']);
+            $record['url'] = $entity->link();
             $result->records[] = $record;
         }
         $result->took = microtime(true) - $start;
