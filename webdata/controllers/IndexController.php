@@ -47,4 +47,10 @@ class IndexController extends Pix_Controller
         }
         $this->view->unit = $unit;
     }
+
+    public function searchAction()
+    {
+        $this->view->query = strval($_GET['query']);
+        $this->view->page = intval($_GET['page']) ?: 1;
+    }
 }
