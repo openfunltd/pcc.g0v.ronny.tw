@@ -41,7 +41,7 @@ class SearchController extends Pix_Controller
             $unit_oids[$unit->oid] = $unit->name;
         }
         $result->records = array();
-        foreach (Entity::search(1)->searchIn(array('date', 'filename'), $match_ids) as $entity) {
+        foreach (Entity::search(1)->searchIn(array('date', 'filename'), $match_ids)->order('date DESC') as $entity) {
             $record = $entity->toArray();
             $record['brief'] = json_decode($record['brief']);
             $record['unit_name'] = $unit_oids[$record['oid']];
