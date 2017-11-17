@@ -2,11 +2,16 @@
 
 class ApiController extends Pix_Controller
 {
+    public function init()
+    {
+        $this->base = (($_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'];
+    }
+
     public function getinfoAction()
     {
         return $this->json(array(
-            '最新資料時間' => date('c', Entity::search(1)->max('date')->date),
-            '最舊資料時間' => date('c', Entity::search(1)->min('date')->date),
+            '最新資料時間' => date('c', strtotime(Entity::search(1)->max('date')->date)),
+            '最舊資料時間' => date('c', strtotime(Entity::search(1)->min('date')->date)),
             '公告數' => count(Entity::search(1)),
         ));
     }
@@ -15,20 +20,36 @@ class ApiController extends Pix_Controller
     {
         return $this->json(array(
             array(
-                'url' => '/api/getinfo',
+                'url' => $this->base . '/api/getinfo',
                 'description' => '列出最新最舊資料時間和總公告數等資訊，無參數',
             ),
             array(
-                'url' => '/api/',
+                'url' => $this->base . '/api/',
                 'description' => '列出 API 列表，無參數',
             ),
             array(
-                'url' => '/api/searchbycompanyname',
+                'url' => $this->base . '/api/searchbycompanyname',
                 'description' => '依公司名稱搜尋, query: 公司名稱, page: 頁數(1開始)',
             ),
             array(
-                'url' => '/api/searchbytitle',
+                'url' => $this->base . '/api/searchbytitle',
                 'description' => '依標案名稱搜尋, query: 公司名稱, page: 頁數(1開始)',
+            ),
+            array(
+                'url' => $this->base . '/api/listbydate',
+                'description' => '列出特定日期的標案公告列表, date: 日期，以 YYYYMMDD 為格式',
+            ),
+            array(
+                'url' => $this->base . '/api/listbyunit',
+                'description' => '列出特定機關的標案公告列表, unit: 機關代碼，可透過 /api/unit 取得代碼列表',
+            ),
+            array(
+                'url' => $this->base . '/api/unit',
+                'description' => '列出機關列表，沒有參數',
+            ),
+            array(
+                'tender' => $this->base . '/api/tender',
+                'description' => '列出某個標案代碼的公告詳細資料, unit: 單位代碼, job_number: 標案代碼',
             ),
         ));
     }
@@ -76,6 +97,8 @@ class ApiController extends Pix_Controller
             $record = $entity->toArray();
             $record['brief'] = json_decode($record['brief']);
             $record['unit_name'] = $unit_oids[$record['oid']];
+            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['oid']);
+            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['oid']) . '&job_number=' . urlencode($record['job_number']);
             $record['unit_url'] = '/index/unit/' . urlencode($record['oid']);
             $record['url'] = $entity->link();
             $result->records[] = $record;
@@ -127,11 +150,90 @@ class ApiController extends Pix_Controller
             $record = $entity->toArray();
             $record['brief'] = json_decode($record['brief']);
             $record['unit_name'] = $unit_oids[$record['oid']];
+            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['oid']);
+            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['oid']) . '&job_number=' . urlencode($record['job_number']);
             $record['unit_url'] = '/index/unit/' . urlencode($record['oid']);
             $record['url'] = $entity->link();
             $result->records[] = $record;
         }
         $result->took = microtime(true) - $start;
+        return $this->json($result);
+    }
+
+    public function listbydateAction()
+    {
+        $date = intval($_GET['date']);
+        $entities = Entity::search(array('date' => $date));
+        $units = Unit::search(1)->searchIn('oid', $entities->toArray('oid'))->toArray('name');
+        $unit_oids = array();
+        foreach ($units as $oid => $name) {
+            $unit_oids[$oid] = $name;
+        }
+
+        $result = new StdClass;
+        foreach ($entities as $entity) {
+            $record = $entity->toArray();
+            $record['brief'] = json_decode($record['brief']);
+            $record['unit_name'] = $unit_oids[$record['oid']];
+            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['oid']);
+            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['oid']) . '&job_number=' . urlencode($record['job_number']);
+            $record['unit_url'] = '/index/unit/' . urlencode($record['oid']);
+            $record['url'] = $entity->link();
+            $result->records[] = $record;
+        }
+        return $this->json($result);
+    }
+
+    public function unitAction()
+    {
+        return $this->json(
+            Unit::search(1)->toArray('name')
+        );
+    }
+
+    public function listbyunitAction()
+    {
+        $oid = strval($_GET['oid']);
+
+        $entities = Entity::search(array('oid' => $oid))->order('date DESC');
+        $unit_name = Unit::find($oid)->name;
+
+        $result = new StdClass;
+        foreach ($entities as $entity) {
+            $record = $entity->toArray();
+            $record['brief'] = json_decode($record['brief']);
+            $record['unit_name'] = $unit_name;
+            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['oid']);
+            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['oid']) . '&job_number=' . urlencode($record['job_number']);
+            $record['unit_url'] = '/index/unit/' . urlencode($record['oid']);
+            $record['url'] = $entity->link();
+            $result->records[] = $record;
+        }
+        return $this->json($result);
+    }
+
+    public function tenderAction()
+    {
+        $oid = strval($_GET['oid']);
+        $job_number = strval($_GET['job_number']);
+
+        $entities = Entity::search(array('oid' => $oid, 'job_number' => $job_number))->order('date ASC');
+        $unit_name = Unit::find($oid)->name;
+
+        $result = new StdClass;
+        foreach ($entities as $entity) {
+            $record = $entity->toArray();
+            $record['brief'] = json_decode($record['brief']);
+            $data = json_decode($entity->data->data);
+            $keys = json_decode($entity->data->keys);
+            $record['detail'] = array_combine($keys, array_map(function($k) use ($data) { return $data->{$k}; }, $keys));
+            $record['unit_name'] = $unit_name;
+            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['oid']);
+            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['oid']) . '&job_number=' . urlencode($record['job_number']);
+            $record['unit_url'] = '/index/unit/' . urlencode($record['oid']);
+            $record['url'] = $entity->link();
+            $result->records[] = $record;
+        }
         return $this->json($result);
     }
 }
