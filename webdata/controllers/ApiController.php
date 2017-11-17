@@ -5,6 +5,8 @@ class ApiController extends Pix_Controller
     public function init()
     {
         $this->base = (($_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'];
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: GET');
     }
 
     public function getinfoAction()
