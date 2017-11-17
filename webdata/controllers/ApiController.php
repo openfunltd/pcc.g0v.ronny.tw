@@ -1,8 +1,39 @@
 <?php
 
-class SearchController extends Pix_Controller
+class ApiController extends Pix_Controller
 {
-    public function bycompanynameAction()
+    public function getinfoAction()
+    {
+        return $this->json(array(
+            '最新資料時間' => date('c', Entity::search(1)->max('date')->date),
+            '最舊資料時間' => date('c', Entity::search(1)->min('date')->date),
+            '公告數' => count(Entity::search(1)),
+        ));
+    }
+
+    public function indexAction()
+    {
+        return $this->json(array(
+            array(
+                'url' => '/api/getinfo',
+                'description' => '列出最新最舊資料時間和總公告數等資訊，無參數',
+            ),
+            array(
+                'url' => '/api/',
+                'description' => '列出 API 列表，無參數',
+            ),
+            array(
+                'url' => '/api/searchbycompanyname',
+                'description' => '依公司名稱搜尋, query: 公司名稱, page: 頁數(1開始)',
+            ),
+            array(
+                'url' => '/api/searchbytitle',
+                'description' => '依標案名稱搜尋, query: 公司名稱, page: 頁數(1開始)',
+            ),
+        ));
+    }
+
+    public function searchbycompanynameAction()
     {
         $start = microtime(true);
 
@@ -53,7 +84,7 @@ class SearchController extends Pix_Controller
         return $this->json($result);
     }
 
-    public function bytitleAction()
+    public function searchbytitleAction()
     {
         $start = microtime(true);
 

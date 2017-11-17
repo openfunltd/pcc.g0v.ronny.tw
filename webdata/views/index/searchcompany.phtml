@@ -28,7 +28,7 @@
 var query = <?= json_encode($this->query) ?>;
 var page= <?= intval($this->page) ?>;
 
-$.get('/search/bycompanyname?query=' + encodeURIComponent(query) + '&page=' + page, function(ret){
+$.get('/api/serachbycompanyname?query=' + encodeURIComponent(query) + '&page=' + page, function(ret){
     $('tbody').html('');
     $('#message').text('顯示搜尋「' + ret.query + '」結果，共 ' + ret.total_records + ' 筆符合，顯示第 ' + ret.page + ' / ' + ret.total_pages + ' 頁。');
 
