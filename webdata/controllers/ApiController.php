@@ -43,7 +43,7 @@ class ApiController extends Pix_Controller
             ),
             array(
                 'url' => $this->base . '/api/listbyunit',
-                'description' => '列出特定機關的標案公告列表, unit: 機關代碼，可透過 /api/unit 取得代碼列表',
+                'description' => '列出特定機關的標案公告列表, unit_id: 機關代碼，可透過 /api/unit 取得代碼列表',
             ),
             array(
                 'url' => $this->base . '/api/unit',
@@ -51,7 +51,7 @@ class ApiController extends Pix_Controller
             ),
             array(
                 'tender' => $this->base . '/api/tender',
-                'description' => '列出某個標案代碼的公告詳細資料, unit: 單位代碼, job_number: 標案代碼',
+                'description' => '列出某個標案代碼的公告詳細資料, unit_id: 單位代碼, job_number: 標案代碼',
             ),
         ));
     }
@@ -225,7 +225,7 @@ class ApiController extends Pix_Controller
 
     public function tenderAction()
     {
-        $oid = strval($_GET['oid']);
+        $oid = strval($_GET['unit_id']);
         $job_number = strval($_GET['job_number']);
 
         $entities = Entity::search(array('oid' => $oid, 'job_number' => $job_number))->order('date ASC');
