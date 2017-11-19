@@ -232,6 +232,7 @@ class ApiController extends Pix_Controller
         $unit_name = Unit::find($oid)->name;
 
         $result = new StdClass;
+        $result->unit_name = $unit_name;
         foreach ($entities as $entity) {
             $record = $entity->toArray();
             $record['brief'] = json_decode($record['brief']);
