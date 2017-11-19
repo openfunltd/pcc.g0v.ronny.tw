@@ -97,11 +97,13 @@ class ApiController extends Pix_Controller
         $result->records = array();
         foreach (Entity::search(1)->searchIn(array('date', 'filename'), $match_ids)->order('date DESC') as $entity) {
             $record = $entity->toArray();
+            $record['unit_id'] = $record['oid'];
+            unset($record['oid']);
             $record['brief'] = json_decode($record['brief']);
-            $record['unit_name'] = $unit_oids[$record['oid']];
-            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['oid']);
-            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['oid']) . '&job_number=' . urlencode($record['job_number']);
-            $record['unit_url'] = '/index/unit/' . urlencode($record['oid']);
+            $record['unit_name'] = $unit_oids[$record['unit_id']];
+            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['unit_id']);
+            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
+            $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
             $record['url'] = $entity->link();
             $result->records[] = $record;
         }
@@ -151,10 +153,12 @@ class ApiController extends Pix_Controller
         foreach (Entity::search(1)->searchIn(array('date', 'filename'), $match_ids)->order('date DESC') as $entity) {
             $record = $entity->toArray();
             $record['brief'] = json_decode($record['brief']);
-            $record['unit_name'] = $unit_oids[$record['oid']];
-            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['oid']);
-            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['oid']) . '&job_number=' . urlencode($record['job_number']);
-            $record['unit_url'] = '/index/unit/' . urlencode($record['oid']);
+            $record['unit_id'] = $record['oid'];
+            unset($record['oid']);
+            $record['unit_name'] = $unit_oids[$record['unit_id']];
+            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['unit_id']);
+            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
+            $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
             $record['url'] = $entity->link();
             $result->records[] = $record;
         }
@@ -176,10 +180,12 @@ class ApiController extends Pix_Controller
         foreach ($entities as $entity) {
             $record = $entity->toArray();
             $record['brief'] = json_decode($record['brief']);
-            $record['unit_name'] = $unit_oids[$record['oid']];
-            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['oid']);
-            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['oid']) . '&job_number=' . urlencode($record['job_number']);
-            $record['unit_url'] = '/index/unit/' . urlencode($record['oid']);
+            $record['unit_id'] = $record['oid'];
+            unset($record['oid']);
+            $record['unit_name'] = $unit_oids[$record['unit_id']];
+            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['unit_d']);
+            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['unit_d']) . '&job_number=' . urlencode($record['job_number']);
+            $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
             $record['url'] = $entity->link();
             $result->records[] = $record;
         }
@@ -195,7 +201,7 @@ class ApiController extends Pix_Controller
 
     public function listbyunitAction()
     {
-        $oid = strval($_GET['oid']);
+        $oid = strval($_GET['unit_id']);
 
         $entities = Entity::search(array('oid' => $oid))->order('date DESC');
         $unit_name = Unit::find($oid)->name;
@@ -203,11 +209,13 @@ class ApiController extends Pix_Controller
         $result = new StdClass;
         foreach ($entities as $entity) {
             $record = $entity->toArray();
+            $record['unit_id'] = $record['oid'];
+            unset($record['oid']);
             $record['brief'] = json_decode($record['brief']);
             $record['unit_name'] = $unit_name;
-            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['oid']);
-            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['oid']) . '&job_number=' . urlencode($record['job_number']);
-            $record['unit_url'] = '/index/unit/' . urlencode($record['oid']);
+            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['unit_id']);
+            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
+            $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
             $record['url'] = $entity->link();
             $result->records[] = $record;
         }
@@ -226,13 +234,15 @@ class ApiController extends Pix_Controller
         foreach ($entities as $entity) {
             $record = $entity->toArray();
             $record['brief'] = json_decode($record['brief']);
+            $record['unit_id'] = $record['oid'];
+            unset($record['oid']);
             $data = json_decode($entity->data->data);
             $keys = json_decode($entity->data->keys);
             $record['detail'] = array_combine($keys, array_map(function($k) use ($data) { return $data->{$k}; }, $keys));
             $record['unit_name'] = $unit_name;
-            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['oid']);
-            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['oid']) . '&job_number=' . urlencode($record['job_number']);
-            $record['unit_url'] = '/index/unit/' . urlencode($record['oid']);
+            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['unit_id']);
+            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
+            $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
             $record['url'] = $entity->link();
             $result->records[] = $record;
         }
