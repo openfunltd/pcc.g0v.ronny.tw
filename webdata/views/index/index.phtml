@@ -1,33 +1,21 @@
 <?= $this->partial('common/header.phtml', $this) ?>
-<h1>標案資料瀏覽</h1>
+<h1>標案資料API</h1>
 <p>
-這邊的目標是要把 <a href="https://web.pcc.gov.tw">中華民國政府電子採購網</a> 的資料，能夠以更簡潔方便的方式顯示，以便更容易讓政府採購的資料產生價值。
+這邊是收集 <a href="https://web.pcc.gov.tw">中華民國政府電子採購網</a> 的資料所做的 API ，您可以至 <a href="https://ronnywang.github.io/pcc-viewer/index.html">https://ronnywang.github.io/pcc-viewer/index.html</a> 使用閱覽器
 </p>
-<h1>使用方式</h1>
+<h1>程式碼及授權</h1>
 <ul>
-    <li>可以透過日期瀏覽當日所有公告，Ex：<a href="/index/date/20171101">2017/11/1</a></li>
-    <li>可以透過機關瀏覽所有標案，Ex：<a href="/index/unit/A.27">科技部</a></li>
-    <li>可以瀏覽標案內容，Ex：<a href="/index/case/3.79/1050204S0015/20160318/BDM-1-51801406">智慧支付整合平台建置委外服務採購案</a></li>
-    <li>
-    <form method="get" action="/index/search">
-        依關鍵字搜尋：<input type="type" name="query" placeholder="輸入關鍵字">
-        <button type="submit">搜尋</button>
-    </form>
+    <li>後端API程式碼：<a href="https://github.com/ronnywang/pcc.g0v.ronny.tw">https://github.com/ronnywang/pcc.g0v.ronny.tw</a></li>
+    <li>前端展示程式碼：<a href="https://github.com/ronnywang/pcc-viewer">https://github.com/ronnywang/pcc-viewer</a></li>
+    <li>API 資料是從<a href="https://web.pcc.gov.tw">中華民國政府電子採購網</a>收集而來，API 有開放 CORS ，歡迎大家自由界
+    接利用，但是請遵循原始資料來源<a href="https://web.pcc.gov.tw/pis/main/pis/client/pssa/right.do">著作權聲明</a>，如下：
+    <ol>
+        <li>(1)本採購網上所刊載以行政院公共工程委員會名義公開發表之著作，即著作人為行政院公共工程委員會者，在合理範圍內，
+        得重製、公開播送或公開傳輸，利用時，並請註明出處。</li>
+        <li>(2)本採購網上之資訊，可為個人或家庭非營利之目的而重製。</li>
+        <li>(3)為報導、評論、教學、研究或其他正當目的，在合理範圍內，得引用本採購網上之資訊，引用時，並請註明出處。</li>
+        <li>(4)其他合理使用情形，請參考著作權法第44條至第65條之規定。</li>                                                   </ol>
     </li>
-    <li>
-    <form method="get" action="/index/searchcompany">
-        依公司名稱搜尋：<input type="type" name="query" placeholder="輸入公司名稱">
-        <button type="submit">搜尋</button>
-    </form>
-    </li>
+    <li>若需商業利用，政府採購網另有提供開放資料之<a href="http://web.pcc.gov.tw/tpsreport/transfer/dataTransfer.do?method=getOkfnOpenDataXml">資料集</a></li>
 </ul>
-<h1>資料情況</h1>
-<ul>
-    <?php $date = Entity::search(1)->max('date')->date; ?>
-    <li>最新資料時間：<a href="/index/date/<?= $date ?>"><?= $date ?></a></li>
-    <?php $date = Entity::search(1)->min('date')->date; ?>
-    <li>最舊資料時間：<a href="/index/date/<?= $date ?>"><?= $date ?></a></li>
-    <li>公告數：<?= count(Entity::search(1)) ?></li>
-</ul>
-
 <?= $this->partial('common/footer.phtml', $this) ?>
