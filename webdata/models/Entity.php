@@ -16,16 +16,6 @@ class EntityRow extends Pix_Table_Row
     {
         return json_decode($this->brief)->{$k};
     }
-
-    public function link()
-    {
-        return sprintf('/index/case/%s/%s/%s/%s',
-            urlencode($this->oid),
-            urlencode($this->job_number),
-            urlencode($this->date),
-            urlencode($this->filename)
-        );
-    }
 }
 
 class Entity extends Pix_Table

@@ -103,8 +103,6 @@ class ApiController extends Pix_Controller
             $record['unit_name'] = $unit_oids[$record['unit_id']];
             $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['unit_id']);
             $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
-            $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
-            $record['url'] = $entity->link();
             $result->records[] = $record;
         }
         $result->took = microtime(true) - $start;
@@ -158,8 +156,6 @@ class ApiController extends Pix_Controller
             $record['unit_name'] = $unit_oids[$record['unit_id']];
             $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['unit_id']);
             $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
-            $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
-            $record['url'] = $entity->link();
             $result->records[] = $record;
         }
         $result->took = microtime(true) - $start;
@@ -185,8 +181,6 @@ class ApiController extends Pix_Controller
             $record['unit_name'] = $unit_oids[$record['unit_id']];
             $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['unit_d']);
             $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['unit_d']) . '&job_number=' . urlencode($record['job_number']);
-            $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
-            $record['url'] = $entity->link();
             $result->records[] = $record;
         }
         return $this->json($result);
@@ -216,8 +210,6 @@ class ApiController extends Pix_Controller
             $record['unit_name'] = $unit_name;
             $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['unit_id']);
             $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
-            $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
-            $record['url'] = $entity->link();
             $result->records[] = $record;
         }
         return $this->json($result);
@@ -244,8 +236,6 @@ class ApiController extends Pix_Controller
             $record['unit_name'] = $unit_name;
             $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['unit_id']);
             $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
-            $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
-            $record['url'] = $entity->link();
             $result->records[] = $record;
         }
         return $this->json($result);
