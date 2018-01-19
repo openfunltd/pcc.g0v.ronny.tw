@@ -197,7 +197,7 @@ class ApiController extends Pix_Controller
     {
         $oid = strval($_GET['unit_id']);
 
-        $entities = Entity::search(array('oid' => $oid))->order('date DESC');
+        $entities = Entity::search(array('oid' => $oid))->order('date DESC')->limit(1000);
         $unit_name = Unit::find($oid)->name;
 
         $result = new StdClass;
