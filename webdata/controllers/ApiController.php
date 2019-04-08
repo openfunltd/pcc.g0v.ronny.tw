@@ -50,8 +50,16 @@ class ApiController extends Pix_Controller
                 'description' => '列出機關列表，沒有參數',
             ),
             array(
-                'tender' => $this->base . '/api/tender',
+                'url' => $this->base . '/api/tender',
                 'description' => '列出某個標案代碼的公告詳細資料, unit_id: 單位代碼, job_number: 標案代碼',
+            ),
+            array(
+                'url' => $this->base . '/api/searchallspecialbudget',
+                'description' => '列出所有的特別預算',
+            ),
+            array(
+                'url' => $this->base . '/api/searchbyspecialbudget',
+                'description' => '搜尋特定特別預算的標案 query: 特別預算名稱',
             ),
         ));
     }
@@ -101,6 +109,98 @@ class ApiController extends Pix_Controller
             unset($record['oid']);
             $record['brief'] = json_decode($record['brief']);
             $record['unit_name'] = $unit_oids[$record['unit_id']];
+            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['unit_id']);
+            $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
+            $result->records[] = $record;
+        }
+        $result->took = microtime(true) - $start;
+        return $this->json($result);
+    }
+
+    public function searchallspecialbudgetAction()
+    {
+        $start = microtime(true);
+
+        $result = new StdClass;
+
+        $curl = curl_init();
+        $cmd = array(
+            'size' => 0,
+            'aggs' => array(
+                'uniq_specialbudget' => array(
+                    'terms' => array('field' => 'special_budget'),
+                ),
+            ),
+        );
+
+        curl_setopt($curl, CURLOPT_URL, getenv('SEARCH_URL') . '/entry/_search');
+        curl_setopt($curl, CURLOPT_HEADER, 0);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($cmd));
+        curl_setopt($curl, CURLOPT_TIMEOUT, 10);
+        $ret = curl_exec($curl);
+        $ret = json_decode($ret);
+        $buckets = ($ret->aggregations->uniq_specialbudget->buckets);
+        $buckets = array_map(function($bucket){
+            $bucket->search_api_url = $this->base . '/api/searchbyspecialbudget?query=' . urlencode($bucket->key);
+            return $bucket;
+        }, $buckets);
+        $result->buckets = $buckets;
+        $result->took = microtime(true) - $start;
+        return $this->json($result);
+    }
+
+    public function searchbyspecialbudgetAction()
+    {
+        $start = microtime(true);
+
+        $result = new StdClass;
+        $result->query = strval($_GET['query']);
+        $result->page = intval($_GET['page']) ?: 1;
+
+        $curl = curl_init();
+        $cmd = array(
+            'query' => array(
+                'query_string' => array('query' => sprintf('special_budget:"%s"', $result->query)),
+            ),
+            'size' => 100,
+            'from' => $result->page * 100 - 100,
+            'sort' => array('date' => 'desc'),
+        );
+
+        curl_setopt($curl, CURLOPT_URL, getenv('SEARCH_URL') . '/entry/_search');
+        curl_setopt($curl, CURLOPT_HEADER, 0);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($cmd));
+        curl_setopt($curl, CURLOPT_TIMEOUT, 10);
+        $ret = curl_exec($curl);
+        $ret = json_decode($ret);
+
+        $result->total_records = $ret->hits->total;
+        $result->total_pages = ceil($ret->hits->total / 100);
+        $result->took = 0;
+        $match_ids = array();
+        $unit_oids = array();
+        foreach ($ret->hits->hits as $hit) {
+            $match_ids[] = explode('-', $hit->_id, 2);
+            $unit_oids[$hit->_source->oid] = $hit->_source->oid;
+        }
+        foreach (Unit::search(1)->searchIn('oid', array_keys($unit_oids)) as $unit) {
+            $unit_oids[$unit->oid] = $unit->name;
+        }
+        $result->records = array();
+        $entity_datas = array();
+        foreach (EntityData::search(1)->searchIn(array('date', 'filename'), $match_ids) as $entity_data) {
+            $entity_datas[$entity_data->date . ':' . $entity_data->filename] = json_decode($entity_data->data);
+        }
+
+        foreach (Entity::search(1)->searchIn(array('date', 'filename'), $match_ids)->order('date DESC') as $entity) {
+            $record = $entity->toArray();
+            $record['unit_id'] = $record['oid'];
+            unset($record['oid']);
+            $record['brief'] = json_decode($record['brief']);
+            $record['unit_name'] = $unit_oids[$record['unit_id']];
+            $record['special_budget'] = $entity_datas[$entity->date . ':' . $entity->filename]->{'採購資料:是否含特別預算:特別預算類型'};
             $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['unit_id']);
             $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
             $result->records[] = $record;
