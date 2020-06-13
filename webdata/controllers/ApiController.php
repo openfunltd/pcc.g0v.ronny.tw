@@ -111,6 +111,12 @@ class ApiController extends Pix_Controller
             $record['unit_name'] = $unit_oids[$record['unit_id']];
             $record['unit_api_url'] = $this->base . '/api/listbyunit?unit=' . urlencode($record['unit_id']);
             $record['tender_api_url'] = $this->base . '/api/tender?unit=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
+            if (array_key_exists('columns', $_GET)) {
+
+                $data = json_decode($entity->data->data);
+                $keys = $_GET['columns'];
+                $record['detail'] = array_combine($keys, array_map(function($k) use ($data) { return $data->{$k}; }, $keys));
+            }
             $result->records[] = $record;
         }
         $result->took = microtime(true) - $start;
@@ -258,6 +264,12 @@ class ApiController extends Pix_Controller
             $record['tender_api_url'] = $this->base . '/api/tender?unit_id=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
             $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
             $record['url'] = $entity->link();
+            if (array_key_exists('columns', $_GET)) {
+
+                $data = json_decode($entity->data->data);
+                $keys = $_GET['columns'];
+                $record['detail'] = array_combine($keys, array_map(function($k) use ($data) { return $data->{$k}; }, $keys));
+            }
             $result->records[] = $record;
         }
         $result->took = microtime(true) - $start;
@@ -313,6 +325,12 @@ class ApiController extends Pix_Controller
             $record['tender_api_url'] = $this->base . '/api/tender?unit_id=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
             $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
             $record['url'] = $entity->link();
+            if (array_key_exists('columns', $_GET)) {
+
+                $data = json_decode($entity->data->data);
+                $keys = $_GET['columns'];
+                $record['detail'] = array_combine($keys, array_map(function($k) use ($data) { return $data->{$k}; }, $keys));
+            }
             $result->records[] = $record;
         }
         $result->took = microtime(true) - $start;
