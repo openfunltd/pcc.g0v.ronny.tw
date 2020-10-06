@@ -275,6 +275,13 @@ class Parser
             }
 
             $tr_dom = $table_child_node;
+            // #trIsPubEcological 是用前端 js 控制 show/hide
+            // 如果不處理他可能會跑版造成判斷錯誤
+            if ($tr_dom->getAttribute('id') == 'trIsPubEcological') {
+                if (trim($tr_dom->getElementsByTagName('td')->item(0)->nodeValue) == '') {
+                    continue;
+                }
+            }
             // 如果是 th colspan="3" 就跳過不管，這是招標公告的標題
             if ($tr_dom->childNodes->item(1) and $tr_dom->childNodes->item(1)->nodeName == 'th' and $tr_dom->childNodes->item(1)->getAttribute('colspan') == 3) {
                 continue;
@@ -651,6 +658,9 @@ class Parser
                     );
                     exit;
                 }
+            } else if (($category . ':' . $key) == '決標資料:是否屬「公共工程生態檢核注意事項」規定辦理生態檢核') {
+                $values->{$category . ':' . $key} = trim($td_dom->nodeValue);
+                continue;
             } elseif (strpos($key, '是否') === 0 or in_array($key, array(
                 '後續擴充',
                 '本案是否可能遲延付款',
@@ -701,7 +711,7 @@ class Parser
                             }
                         } else {
                             echo $doc->saveHTML($table_dom);
-                            throw new Exception("{$key} 的表格出現奇怪的東西", 999);
+                            throw new Exception("{$category}:{$key} 的表格出現奇怪的東西", 999);
                         }
                     }
                 } elseif ($div_dom = $td_dom->getElementsByTagName('div')->item(0) and $div_dom->getAttribute('class') == 'shift' and $div_dom->getAttribute('id') != 'span_isDeposite') {
