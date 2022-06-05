@@ -16,6 +16,7 @@ while (true) {
     if ($ymd < 20100102) {
         break;
     }
+    $date = sprintf("%03d年%02d月%02d日", date('Y', $now) - 1911, date('m', $now), date('d', $now));
     $target = "list/{$ymd}.html.gz";
     $now -= 86400;
     if (file_exists($target)) {
@@ -34,7 +35,7 @@ while (true) {
     // curl -interface eth1 'http://web.pcc.gov.tw/prkms/prms-viewTenderStatClient.do?ds=20170628&root=tps' 
     // -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36' 
     // -H 'Referer: http://web.pcc.gov.tw/prkms/prms-viewDailyTenderListClient.do?root=tps'
-    $url = 'https://web.pcc.gov.tw/prkms/tender/common/noticeDate/readPublish?dateStr=' . urlencode(sprintf('%03d年%02d月%02d日', date('Y', $now) - 1911, date('m', $now), date('d', $now)));
+    $url = 'https://web.pcc.gov.tw/prkms/tender/common/noticeDate/readPublish?dateStr=' . urlencode($date);
     curl_setopt($curl, CURLOPT_URL, $get_proxy_url($url));
     curl_setopt($curl, CURLOPT_HTTPHEADER, array(
         'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36',
@@ -54,6 +55,7 @@ while (true) {
     if ($ymd < 20120619) {
         break;
     }
+    $date = sprintf("%03d年%02d月%02d日", date('Y', $now) - 1911, date('m', $now), date('d', $now));
     $target = "list/np-{$ymd}.html.gz";
     $now -= 86400;
     if (file_exists($target)) {
@@ -71,7 +73,7 @@ while (true) {
     // curl -interface eth1 'http://web.pcc.gov.tw/prkms/prms-viewTenderStatClient.do?ds=20170628&root=tps' 
     // -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36' 
     // -H 'Referer: http://web.pcc.gov.tw/prkms/prms-viewDailyTenderListClient.do?root=tps'
-    $url = 'https://web.pcc.gov.tw/prkms/tender/common/noticeDate/readUnPublish?dateStr=' . urlencode(sprintf('%03d年%02d月%02d日', date('Y', $now) - 1911, date('m', $now), date('d', $now)));
+    $url = 'https://web.pcc.gov.tw/prkms/tender/common/noticeDate/readUnPublish?dateStr=' . urlencode($date);
     curl_setopt($curl, CURLOPT_URL, $get_proxy_url($url));
     //curl_setopt($curl, CURLOPT_INTERFACE, '10.0.200.18');
     curl_setopt($curl, CURLOPT_HTTPHEADER, array(
