@@ -15,8 +15,30 @@ class Parser
                     $records[] = $href;
                 } elseif (preg_match('#/tps/main/pms/tps/atm/atmNonAwardAction.do\?searchMode=common&method=nonAwardContentForPublic&pkAtmMain=[0-9]#', $href)) {
                     $records[] = $href;
-                } elseif (preg_match('#/tps/main/pms/tps/atm/atmAwardAction.do\?newEdit=false&searchMode=common&method=inquiryForPublic&pkAtmMain=[0-9]*&tenderCaseNo=[^&]*#', $href)) {
+                } elseif (preg_match('#unPublish\.tender\.(.*)#', $href, $matches)) {
+                    // aaa
                     $records[] = $href;
+                } elseif (preg_match('#unPublish\.tpRead\.(.*)#', $href, $matches)) {
+                    $records[] = $href;
+                } elseif (preg_match('#unPublish.nonAward.(.*)#', $href, $matches)) {
+                    // anaa
+                    $records[] = $href;
+				} elseif (preg_match('#unPublish.(tender|award).(.*)#', $href, $matches)) {
+                    // ttd
+                    $records[] = $href;
+                } elseif (preg_match('#unPublish\.gpa\.(.*)#', $href, $matches)) {
+                    // TODO: 採購預告公告
+                    continue;
+                } elseif (preg_match('#unPublish\.(aspam|arpam)\.(.*)#', $href, $matches)) {
+                    // TODO: 財物變更公告
+                } elseif (preg_match('#/opas/aspam/public/readOneAspamDetailNew#', $href, $matches)) {
+                    // TODO: 財物變更公告
+                } elseif (preg_match('#/opas/arpam/public/readOneArpamDetailNew#', $href, $matches)) {
+                    // TODO: 財物出租公告
+                } elseif (preg_match('#unPublish\.tpAppeal\.(.*)#', $href, $matches)) {
+                    // TODO: 公開徵求廠商提供參考資料(不刊公報)
+                //} elseif (preg_match('#/tps/main/pms/tps/atm/atmAwardAction.do\?newEdit=false&searchMode=common&method=inquiryForPublic&pkAtmMain=[0-9]*&tenderCaseNo=[^&]*#', $href)) {
+                    //$records[] = $href;
                 } elseif (preg_match('#/tps/tps/tp/main/pms/tps/tp/InitialDocumentPublicRead.do\?pMenu=common&method=getTpReadFormal&tpReadSeq=[0-9]*#', $href)) {
                     $records[] = $href;
                 } elseif ($href == '#') {
@@ -71,6 +93,8 @@ class Parser
                     throw new Exception('不認得的圖片網址 ' . $node->getAttribute('src'), 999);
                 }
                 $str = $str . CNS2UTF8::convert($matches[1], $matches[2]);
+            } else if ($node->nodeName == '#comment') {
+                continue;
             } else if ($node->nodeName == 'br') {
                 $str = $str . "\n";
             } else if ($node->nodeName == 'page' or $node->nodeName == 'code') {
@@ -114,7 +138,7 @@ class Parser
         return $str;
     }
 
-    public function parseHTML($content, $url)
+    public static function parseHTML($content, $url)
     {
         if (strpos($content, '系統發生錯誤(Error:500)。')) {
             throw new Exception("500: $url", 500);
@@ -171,6 +195,8 @@ class Parser
                 '財物出租公告',
                 '財物出租更正公告',
                 '限制性招標(經公開評選或公開徵求)公告',
+                '經公開評選或公開徵求之限制性招標公告',
+                '經公開評選或公開徵求之限制性招標更正公告',
                 '限制性招標(經公開評選或公開徵求)更正公告',
                 '選擇性招標(建立合格廠商名單)公告',
                 '選擇性招標(建立合格廠商名單)更正公告',
@@ -658,6 +684,9 @@ class Parser
                     );
                     exit;
                 }
+            } else if (($category . ':' . $key) == '決標資料:是否屬「公共工程生態檢核注意事項」規定應辦理生態檢核') {
+                $values->{$category . ':' . $key} = trim($td_dom->nodeValue);
+                continue;
             } else if (($category . ':' . $key) == '決標資料:是否屬「公共工程生態檢核注意事項」規定辦理生態檢核') {
                 $values->{$category . ':' . $key} = trim($td_dom->nodeValue);
                 continue;
@@ -840,6 +869,16 @@ class Parser
                     'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20200529&fn=BDM-1-53101274.xml',
                     'http://web.pcc.gov.tw/tps/main/pms/tps/atm/atmAwardAction.do?newEdit=false&searchMode=common&method=inquiryForPublic&pkAtmMain=53156005&tenderCaseNo=dh1090708',
                     'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20200915&fn=BDM-1-53190625.xml',
+                    'http://web.pcc.gov.tw/tps/main/pms/tps/atm/atmAwardAction.do?newEdit=false&searchMode=common&method=inquiryForPublic&pkAtmMain=53296612&tenderCaseNo=1102018',
+                    'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20210129&fn=BDM-1-53323317.xml',
+                    'http://web.pcc.gov.tw/tps/main/pms/tps/atm/atmAwardAction.do?newEdit=false&searchMode=common&method=inquiryForPublic&pkAtmMain=53322668&tenderCaseNo=11002',
+                    'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20210217&fn=BDM-1-53331422.xml',
+                    'http://web.pcc.gov.tw/tps/main/pms/tps/atm/atmAwardAction.do?newEdit=false&searchMode=common&method=inquiryForPublic&pkAtmMain=53349988&tenderCaseNo=11005',
+                    'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20211019&fn=BDM-1-53528885.xml',
+                    'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20211029&fn=BDM-1-53538471.xml',
+                    'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20220126&fn=BDM-1-53635739.xml',
+                    'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20220218&fn=BDM-3-53652351.xml',
+                    'http://web.pcc.gov.tw/tps/main/pms/tps/atm/atmAwardAction.do?newEdit=false&searchMode=common&method=inquiryForPublic&pkAtmMain=53691364&tenderCaseNo=11127503900',
                     )) and $category == '已公告資料' and $key == '本採購是否屬「具敏感性或國安(含資安)疑慮之業務範疇」採購') {
 
                     if (strpos(trim($td_dom->nodeValue), '是') === 0) {
@@ -858,6 +897,14 @@ class Parser
                     'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20200629&fn=BDM-1-53125787.xml',
                     'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20200720&fn=BDM-2-52814463.xml',
                     'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20200915&fn=BDM-1-53190625.xml',
+                    'http://web.pcc.gov.tw/tps/main/pms/tps/atm/atmAwardAction.do?newEdit=false&searchMode=common&method=inquiryForPublic&pkAtmMain=53322668&tenderCaseNo=11002',
+                    'http://web.pcc.gov.tw/tps/main/pms/tps/atm/atmAwardAction.do?newEdit=false&searchMode=common&method=inquiryForPublic&pkAtmMain=53327895&tenderCaseNo=110003',
+                    'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20210217&fn=BDM-1-53331422.xml',
+                    'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20211019&fn=BDM-1-53528885.xml',
+                    'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20211029&fn=BDM-1-53538471.xml',
+                    'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20220126&fn=BDM-1-53635739.xml',
+                    'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20220218&fn=BDM-3-53652351.xml',
+                    'http://web.pcc.gov.tw/tps/main/pms/tps/atm/atmAwardAction.do?newEdit=false&searchMode=common&method=inquiryForPublic&pkAtmMain=53691364&tenderCaseNo=11127503900',
                     )) and $category == '已公告資料' and $key == '本採購是否屬「涉及國家安全」採購') {
                     if (strpos(trim($td_dom->nodeValue), '是') === 0) {
                         $values->{'已公告資料:本採購是否屬「涉及國家安全」採購'} = '是';
@@ -878,8 +925,11 @@ class Parser
                 } elseif ($values->url == 'http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds=20190813&fn=BDM-1-52846530.xml' and $category == '已公告資料' and $key == '本採購是否屬「具敏感性或國安(含資安)疑慮之業務範疇」採購') {
                     $values->{'已公告資料:本採購是否屬「具敏感性或國安(含資安)疑慮之業務範疇」採購'} = '是';
                     continue;
-                } elseif (($category . ':' . $key) == '其他:附加說明') {
-                    $values->{'其他:附加說明'} = trim($td_dom->nodeValue);
+                } elseif (in_array($category . ':' . $key, array(
+                    '其他:附加說明',
+                    '其他:廠商資格摘要',
+                ))) {
+                    $values->{'其他:' . $key} = trim($td_dom->nodeValue);
                     continue;
                 } elseif (in_array($values->url . ':' . $category . ':' . $key, array(
                     'http://web.pcc.gov.tw/tps/tpam/main/tps/tpam/tpam_tender_detail.do?searchMode=common&scope=F&primaryKey=3865364:領投開標:收受投標文件地點',
