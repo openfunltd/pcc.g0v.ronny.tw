@@ -3,7 +3,7 @@
 include(__DIR__ . '/../config.php');
 $get_proxy_url = function($url, $if_id) {
     $secret = getenv('PROXY_SECRET');
-    $url = getenv('PROXY_URL') . '?url=' . urlencode($url) . '&sig=' . md5($secret . $url) . '&c=' . $if_id;
+    $url = getenv('PROXY_URL') . '?url=' . urlencode($url) . '&sig=' . md5($secret . $url) . '&c=' . $if_id . '&with_cookie=1';
     return $url;
 };
 
@@ -22,26 +22,30 @@ $set_curl_if = function($curl, $v) use (&$if_id) {
 
 $hack_captcha = function($content, $if_id) use ($set_curl_if, $get_proxy_url) {
     // id = /tps/tpam/validate.do?id=k9SbtD25s6r0Msvd4z52WaOBJnYw8F
-    preg_match('#/tps/tpam/validate\.do\?id=([^"]*)#', $content, $matches);
-    $url = 'http://web.pcc.gov.tw' . $matches[0];
+    preg_match('#/tps/validate/check\?id=([^&"]*)#', $content, $matches);
+    $url = 'https://web.pcc.gov.tw' . $matches[0];
     $validate_id = $matches[1];
 
+    // load cookie
     $curl = curl_init($get_proxy_url($url, $if_id));
-    $set_curl_if($curl, $if_id);
     curl_setopt($curl, CURLOPT_HTTPHEADER, array(
         'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36',
-        'Referer: http://web.pcc.gov.tw/prkms/prms-viewDailyTenderListClient.do?root=tps',
     ));
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($curl, CURLOPT_COOKIEFILE, '');
+    curl_setopt($curl, CURLOPT_COOKIEFILE, '/tmp/cookiefile');
+    curl_setopt($curl, CURLOPT_COOKIEJAR, '/tmp/cookiefile');
     $content = curl_exec($curl);
 
+    preg_match('#<input type="hidden" name="_csrf" value="([^"]+)"#', $content, $matches);
+    $csrf = $matches[1];
+
     // answer pic
-    preg_match('#validate.do\?poker=answer&[0-9.]*#', $content, $matches);
+    preg_match('#/tps/validate/init\?poker=answer&[0-9.]*#', $content, $matches);
     $answer_pic_url = $matches[0];
-    curl_setopt($curl, CURLOPT_URL, $get_proxy_url('http://web.pcc.gov.tw/tps/tpam/' . $answer_pic_url, $if_id));
+    curl_setopt($curl, CURLOPT_URL, $get_proxy_url('https://web.pcc.gov.tw' . $answer_pic_url, $if_id));
     $answer_pic_content = curl_exec($curl);
+    $info = curl_getinfo($curl);
     file_put_contents('tmp', $answer_pic_content);
 
     if (!$answer_pic = imagecreatefrompng('tmp')) {
@@ -65,10 +69,10 @@ $hack_captcha = function($content, $if_id) use ($set_curl_if, $get_proxy_url) {
         $answer_cards[] = $answer_card;
     }
 
-    preg_match_all('#validate.do\?poker=question&id=([^"]*)#', $content, $matches);
+    preg_match_all('#/tps/validate/init\?poker=question&id=([^"]*)#', $content, $matches);
     $answers = array();
     foreach ($matches[0] as $idx => $question_pic_url) {
-        curl_setopt($curl, CURLOPT_URL, $get_proxy_url('http://web.pcc.gov.tw/tps/tpam/' . $question_pic_url, $if_id));
+        curl_setopt($curl, CURLOPT_URL, $get_proxy_url('https://web.pcc.gov.tw' . $question_pic_url, $if_id));
         $answer_pic_content = curl_exec($curl);
         file_put_contents('tmp', $answer_pic_content);
         $question_pic = imagecreatefrompng('tmp');
@@ -102,10 +106,10 @@ $hack_captcha = function($content, $if_id) use ($set_curl_if, $get_proxy_url) {
 
     curl_setopt($curl, CURLOPT_HTTPHEADER, array(
         'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36',
-        'Referer: http://web.pcc.gov.tw/prkms/prms-viewDailyTenderListClient.do?root=tps',
+        'Referer: https://web.pcc.gov.tw/tps/QueryTender/query/searchTenderDetail',
     ));
-    curl_setopt($curl, CURLOPT_URL, $get_proxy_url('http://web.pcc.gov.tw/tps/tpam/validate.do?id=' . $validate_id, $if_id));
-    $post_field = "choose={$answers[0]}&choose={$answers[1]}&id={$validate_id}";
+    curl_setopt($curl, CURLOPT_URL, $get_proxy_url('https://web.pcc.gov.tw/tps/validate/check', $if_id));
+    $post_field = "choose={$answers[0]}&choose={$answers[1]}&id={$validate_id}&_csrf={$csrf}";
     error_log($post_field);
 
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -113,7 +117,6 @@ $hack_captcha = function($content, $if_id) use ($set_curl_if, $get_proxy_url) {
     curl_setopt($curl, CURLOPT_POSTFIELDS, $post_field);
     $content = curl_exec($curl);
     $info = curl_getinfo($curl);
-
 };
 
 $if_id = 0;
@@ -158,10 +161,15 @@ while ($now >= $end_date) {
                     $records[] = $href;
                 } elseif (preg_match('#unPublish\.(aspam|arpam)\.(.*)#', $href, $matches)) {
                     // TODO: 財物變更公告
+                } elseif (preg_match('#/opas/aspam/public/readOneAspamDetailNew#', $href, $matches)) {
+                    // TODO: 財物變更公告
+                } elseif (preg_match('#/opas/arpam/public/readOneArpamDetailNew#', $href, $matches)) {
+                    // TODO: 財物出租公告
                 } elseif (preg_match('#unPublish\.tpAppeal\.(.*)#', $href, $matches)) {
                     // TODO: 公開徵求廠商提供參考資料(不刊公報)
                 } else {
                     print_r($href);
+                    echo "\n";
                     readline($np_target . ' wrong!!!');
                 }
             }
@@ -179,13 +187,13 @@ while ($now >= $end_date) {
         if (strpos($record, 'xml')) {
             $url = "https://web.pcc.gov.tw/prkms/tender/common/noticeDate/redirectPublic?ds={$ymd}&fn={$record}";
         } elseif (preg_match('#unPublish.tender.(.*)#', $record, $matches)) {
-            $url = "https://web.pcc.gov.tw/prkms/urlSelector/common/atm?pk=" . $matches[1];
+            $url = "https://web.pcc.gov.tw/prkms/urlSelector/common/tpam?pk=" . $matches[1];
             $record = 'ttd-' . base64_decode($matches[1]);
         } elseif (preg_match('#unPublish.nonAward.(.*)#', $record, $matches)) {
             $url = "https://web.pcc.gov.tw/prkms/urlSelector/common/nonAtm?pk=" . $matches[1];
             $record = 'anaa-' . base64_decode($matches[1]);
         } elseif (preg_match('#unPublish\.award\.(.*)#', $record, $matches)) {
-            $url = "https://web.pcc.gov.tw/prkms/urlSelector/common/tpam?pk=" . $matches[1];
+            $url = "https://web.pcc.gov.tw/prkms/urlSelector/common/atm?pk=" . $matches[1];
             $record = 'aaa-' . base64_decode($matches[1]);
         } elseif (preg_match('#unPublish\.tpRead\.(.*)#', $record, $matches)) {
             $url = "https://web.pcc.gov.tw/prkms/urlSelector/common/tpRead?pk=" . $matches[1];
@@ -223,8 +231,8 @@ while ($now >= $end_date) {
         // curl -interface eth1 'http://web.pcc.gov.tw/prkms/prms-viewTenderStatClient.do?ds=20170628&root=tps' 
         // -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36' 
         // -H 'Referer: http://web.pcc.gov.tw/prkms/prms-viewDailyTenderListClient.do?root=tps'
-        error_log($url);
-        curl_setopt($curl, CURLOPT_URL, $get_proxy_url($url, $if_id));
+        $proxy_url = $get_proxy_url($url, $if_id);
+        curl_setopt($curl, CURLOPT_URL, $proxy_url);
         curl_setopt($curl, CURLOPT_TIMEOUT, 300);
         curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
         $set_curl_if($curl, $if_id);
@@ -254,7 +262,7 @@ while ($now >= $end_date) {
         curl_close($curl);
 
         if (strpos($output, '為預防惡意程式針對本系統進行大量')) {
-            usleep($sleep_time * 100000 / ($if_count - count($skip_if)));
+            //usleep($sleep_time * 10000 / ($if_count - count($skip_if)));
             error_log("crawled {$ymd} {$seq}/{$total} {$record} failed, 遇到驗證碼" . strlen($output));
             $output = $hack_captcha($output, $current_if_id);
             $seq --;
@@ -266,7 +274,7 @@ while ($now >= $end_date) {
             }
 
             //sleep(60);
-            usleep($sleep_time * 100000 / ($if_count - count($skip_if)));
+            //usleep($sleep_time * 10000 / ($if_count - count($skip_if)));
             continue;
         } elseif (strpos($output, 'Web Page Blocked')) {
             error_log("if_id={$current_if_id} 無法使用 $url");
@@ -281,7 +289,7 @@ while ($now >= $end_date) {
             error_log(json_encode($info, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             error_log("{$ymd} {$record} {$url} failed, retry (if_id={$current_if_id})");
             $skip_if[$current_if_id] = time(); // 等 30 秒
-            usleep($sleep_time * 100000 / ($if_count - count($skip_if)));
+            //usleep($sleep_time * 10000 / ($if_count - count($skip_if)));
             //sleep(10);
             $seq --;
             continue;
@@ -295,7 +303,7 @@ while ($now >= $end_date) {
         }
         fwrite(STDERR, chr(27) . "k{$ymd} {$seq}/{$total}" . chr(27) . "\\");
         error_log(date('His') . " crawled {$ymd} {$seq}/{$total} {$record} " . strlen($output) . " if_id={$current_if_id}");
-        usleep($sleep_time * 180000 / $if_count);
+        //usleep($sleep_time * 180000 / $if_count);
     }
     error_log("crawled {$ymd} " . $total);
 }
