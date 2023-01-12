@@ -12,4 +12,12 @@ class EntityData extends Pix_Table
         $this->_columns['data'] = array('type' => 'jsonb');
         $this->_columns['keys'] = array('type' => 'jsonb');
     }
+
+    public static function updateURL($data, $entity)
+    {
+        if (property_exists($data, 'url')) {
+            $data->url = Entity::updateURL($data->url, $entity->date, $entity->filename);
+        }
+        return $data;
+    }
 }
