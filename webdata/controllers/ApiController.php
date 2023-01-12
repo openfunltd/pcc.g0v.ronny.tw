@@ -114,6 +114,7 @@ class ApiController extends Pix_Controller
             if (array_key_exists('columns', $_GET)) {
 
                 $data = json_decode($entity->data->data);
+                $data = EntityData::updateURL($data, $entity);
                 $keys = $_GET['columns'];
                 $record['detail'] = array_combine($keys, array_map(function($k) use ($data) { return $data->{$k}; }, $keys));
             }
@@ -267,6 +268,7 @@ class ApiController extends Pix_Controller
             if (array_key_exists('columns', $_GET)) {
 
                 $data = json_decode($entity->data->data);
+                $data = EntityData::updateURL($data, $entity);
                 $keys = $_GET['columns'];
                 $record['detail'] = array_combine($keys, array_map(function($k) use ($data) { return $data->{$k}; }, $keys));
             }
@@ -328,6 +330,7 @@ class ApiController extends Pix_Controller
             if (array_key_exists('columns', $_GET)) {
 
                 $data = json_decode($entity->data->data);
+                $data = EntityData::updateURL($data, $entity);
                 $keys = $_GET['columns'];
                 $record['detail'] = array_combine($keys, array_map(function($k) use ($data) { return $data->{$k}; }, $keys));
             }
@@ -410,6 +413,7 @@ class ApiController extends Pix_Controller
             $record['unit_id'] = $record['oid'];
             unset($record['oid']);
             $data = json_decode($entity->data->data);
+            $data = EntityData::updateURL($data, $entity);
             $keys = json_decode($entity->data->keys);
             $record['detail'] = array_combine($keys, array_map(function($k) use ($data) { return $data->{$k}; }, $keys));
             $record['unit_name'] = $unit_name;
