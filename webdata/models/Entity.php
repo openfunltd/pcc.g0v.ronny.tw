@@ -46,4 +46,34 @@ class Entity extends Pix_Table
 
         $this->_relations['data'] = array('rel' => 'has_one', 'type' => 'EntityData');
     }
+
+    public static function getFilename($url)
+    {
+        if (preg_match('#unPublish\.award\.(.*)#', $url, $matches)) {
+            return   'aaa-' . base64_decode($matches[1]);
+        } else if (preg_match('#unPublish\.tender\.(.*)#', $url, $matches)) {
+            return   'ttd-' . base64_decode($matches[1]);
+        } else if (preg_match('#unPublish\.nonAward\.(.*)#', $url, $matches)) {
+            return   'anaa-' . base64_decode($matches[1]);
+        } else {
+            throw new Exception("unknown url: $url");
+        }
+    }
+
+    public static function updateUrl($oldurl, $date = null, $filename = null)
+    {
+        $url = '';
+        if (preg_match('#http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do\?ds=(\d+)&fn=(.*)#', $oldurl, $matches)) {
+            $url = sprintf("https://web.pcc.gov.tw/prkms/tender/common/noticeDate/redirectPublic?ds=%s&fn=%s", urlencode($matches[1]), urlencode($matches[2]));
+        } elseif (preg_match('#^aaa-(\d*)$#', $filename, $matches)) {
+            $url = sprintf("https://web.pcc.gov.tw/prkms/urlSelector/common/atm?pk=" . base64_encode($matches[1]));
+        } elseif (preg_match('#^anaa-(\d*)$#', $filename, $matches)) {
+            $url = sprintf("https://web.pcc.gov.tw/prkms/urlSelector/common/nonAtm?pk=" . base64_encode($matches[1]));
+        } elseif (preg_match('#^ttd-(\d*)$#', $filename, $matches)) {
+            $url = sprintf("https://web.pcc.gov.tw/prkms/urlSelector/common/tpam?pk=" . base64_encode($matches[1]));
+        } else {
+            throw new Exception(sprintf("unknown url: %s, date: %s, filename: %s", $oldurl, $date, $filename));
+        }
+        return $url;
+    }
 }
