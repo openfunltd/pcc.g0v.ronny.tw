@@ -965,7 +965,7 @@ class Parser
         }
         foreach ($dom->childNodes as $node) {
             if ($node->nodeName == '#text') {
-                $ret .= $node->nodeValue;
+                $ret .= trim(preg_replace('#\s+#', ' ', $node->nodeValue));
                 continue;
             }
             if (in_array($node->nodeName, ['#comment', '#cdata-section'])) {
@@ -980,6 +980,10 @@ class Parser
             if ($node->nodeName == 'br') {
                 $ret .= "\n";
                 continue;
+            }
+            // https://web.pcc.gov.tw/tps/atm/AtmAwardWithoutSso/QueryAtmAwardDetail?pkAtmMain=NTM3NDIzNTg=
+            if ($node->getAttribute('id') == 'Prompt_Message') {
+                break;
             }
             $ret .= str_replace('&nbsp', '', self::getDomValue($node));
         }
@@ -1045,7 +1049,7 @@ class Parser
                     $tr_doms[] = $node;
                 }
             }
-            foreach ($tr_doms as $tr_dom) {
+            while ($tr_dom = array_shift($tr_doms)) {
                 $td_doms = [];
                 if (strpos($tr_dom->getAttribute('style'), 'display:none') !== false) {
                     continue;
@@ -1058,50 +1062,184 @@ class Parser
 
                 if (count($td_doms) == 1) {
                     $category = preg_replace('#\s#', '', $td_doms[0]->nodeValue);
+                    $category = str_replace(html_entity_decode('&nbsp;'), '', $category);
                     if ($category == '無法決標資料') {
                         $category = '無法決標公告';
                     }
                 } elseif (count($td_doms) == 2) {
                     $key = trim($td_doms[0]->nodeValue);
-                    if ($category == '招標品項' and $key == '品項編號') {
+                    $key = preg_replace("#\s+#", "", $key);
+                    $key = str_replace(html_entity_decode('&nbsp;'), '', $key);
+                    $key = str_replace('　', '', $key);
+
+                    if (in_array($category, ['招標品項', '決標品項']) and $key == '品項編號') {
                         $item_no = $key . trim($td_doms[1]->nodeValue);
                     }
 
-                    $key = preg_replace("#\s+#", "", $key);
-                    if ($category == '招標品項') {
-                        if ($key == '品項編號') {
-                            $key = $item_no;
-                        } else {
-                            $key = $item_no . ':' . $key;
-                        }
-                    }
                     $value = self::getDomValue($td_doms[1]);
 
+                    if ($category == '投標廠商') {
+                        if (in_array($key, [
+                            '廠商電話',
+                            '履約起迄日期',
+                        ])) {
+                            $value = preg_replace('#\s#', '', $value);
+                        } elseif (in_array($key, [
+                            '決標金額',
+                        ])) {
+                            $value = trim(explode("\n", $value)[0]);
+                        }
+
+                        if (preg_match('#^投標廠商\d+$#', $key)) {
+                            $item_no = $key;
+                        } elseif (in_array($key, [
+                            '投標廠商家數',
+                        ])) {
+                        } else {
+                            $key = "{$item_no}:{$key}";
+                        }
+
+                    }
+
+                    if (in_array($category, [
+                        '決標品項',
+                        '招標品項',
+                    ])) {
+                        if (in_array($key, [
+                        ])) {
+                            $value = preg_replace('#\s#', '', $value);
+                        } elseif (in_array($key, [
+                            '得標廠商原始投標金額',
+                            '決標金額',
+                            '決標單價',
+                            '底價金額',
+                            '標價金額',
+                        ])) {
+                            $value = trim(explode("\n", $value)[0]);
+                        }
+
+                        $fokey = $td_doms[0]->nodeValue;
+                        $okey = $key;
+                        if ($span_dom = $td_doms[0]->getElementsByTagName('span')->item(0) and $span_dom->getAttribute('class') == 'indent2') {
+                            $item_no[2] = $key;
+                            $key = implode(':', $item_no);
+                        } else if (strpos($fokey, '　　') === 0) {
+                            $item_no[2] = $key;
+                            $key = implode(':', $item_no);
+                        } elseif (strpos($fokey, '　') === 0) {
+                            if (preg_match('#^未?得標廠商\d+$#u', $key)) {
+                                // 第X品項:得標廠商X
+                                $item_no[1] = $key;
+                                $item_no = array_slice($item_no, 0, 2);
+                            } elseif (preg_match('#^未?得標廠商#u', $item_no[1]) and preg_match('#^未?得標廠商$#u', $key)) {
+                                // 第X品項:得標廠商X:得標廠商
+                                $item_no[2] = $key;
+                            } else {
+                                $item_no[1] = $key;
+                            }
+                            $key = implode(':', $item_no);
+                        } else {
+                            if ($key == '品項編號') {
+                                $item_no = ["品項編號" . $value];
+                                $key = implode(':', $item_no);
+                            } elseif (is_array($item_no) and preg_match('#^品項編號\d+$#', $item_no[0])) {
+                                $item_no[1] = $key;
+                                $key = implode(':', $item_no);
+                            } else {
+                                $item_no = [$key];
+                            }
+                        }
+
+                        if (trim($okey) == '原產地國別') {
+                            foreach ($td_doms[1]->getElementsByTagName('tr') as $tr_dom) {
+                                $td_doms = $tr_dom->getElementsByTagName('td');
+                                $skey = trim($td_doms->item(0)->nodeValue);
+                                $svalue = trim($td_doms->item(1)->nodeValue);
+                                if (in_array($skey, [
+                                    '原產地國別得標金額',
+                                ])) {
+                                    $svalue = trim(explode("\n", $svalue)[0]);
+                                }
+                                if ($skey) {
+                                    $values->{"{$category}:{$key}:{$skey}"} = $svalue;
+                                }
+                            }
+                            $value = '';
+                        }
+                    }
+
                     if (in_array("{$key}", [
-                        '機關地址',
                         '聯絡電話',
                         '傳真號碼',
                         '標的分類',
-                    ])) {
+                        '契約是否訂有依物價指數調整價金規定',
+                    ])) { // 去空白
                         $value = preg_replace('#\s#', '', $value);
-                    } elseif ("{$category}:{$key}" == '採購資料:是否受機關補助') {
-                        $value = $doc->getElementById('isGrant')->nodeValue;
-                        $divnode = $doc->getElementById('isGrant');
-                        while ($divnode) {
-                            $divnode = $divnode->nextSibling;
-                            if ($divnode->nodeName == 'div' and $divnode->getAttribute('class') == 'atsp') {
-                                foreach ($divnode->childNodes as $node) {
-                                    if ($node->nodeName == 'div') {
-                                        $skey = trim($node->childNodes->item(0)->nodeValue);
-                                        $svalue = trim($node->childNodes->item(1)->nodeValue);
-                                        if ("{$category}:{$key}:{$skey}" == '採購資料:是否受機關補助:補助機關') {
-                                            preg_match('#^([A-Z0-9.]+)(.*)$#', $svalue, $matches);
-                                            $svalue = $matches[1] . ' ' . $matches[2];
+                    } elseif ("{$category}:{$key}" == '決標資料:總決標金額') {
+                        $value = trim(explode("\n", $value)[0]);
+                        if ($dom = $doc->getElementById('awardPrice')) {
+                            $dom = $dom->nextSibling;
+                            while ($dom) {
+                                if ($dom->nodeName == 'span') {
+                                    $values->{"決標資料:總決標金額:remind"} = trim(str_replace(html_entity_decode('&emsp;'), '', self::getDomValue($dom)));
+                                }
+                                $dom = $dom->nextSibling;
+                            }
+                        }
+
+                    } elseif ($key == '是否應依公共工程專業技師簽證規則實施技師簽證') {
+                        if (strpos($content, 'var isEngin = "N";')) {
+                            $value = '否';
+                        } elseif (strpos($content, 'var isEngin = "Y";')) {
+                            $value = '是';
+                        }
+                    } elseif ("{$key}" == '是否受機關補助') {
+                        if ($doc->getElementById('isGrant')) {
+                            $value = $doc->getElementById('isGrant')->nodeValue;
+                            $divnode = $doc->getElementById('isGrant');
+                            while ($divnode) {
+                                $divnode = $divnode->nextSibling;
+                                if ($divnode->nodeName == 'div' and $divnode->getAttribute('class') == 'atsp') {
+                                    foreach ($divnode->childNodes as $node) {
+                                        if ($node->nodeName == 'div') {
+                                            $skey = trim($node->childNodes->item(0)->nodeValue);
+                                            $svalue = trim($node->childNodes->item(1)->nodeValue);
+                                            if ("{$key}:{$skey}" == '是否受機關補助:補助機關') {
+                                                preg_match('#^([A-Z0-9.]+)(.*)$#', $svalue, $matches);
+                                                $svalue = $matches[1] . ' ' . $matches[2];
+                                            }
+                                            // TODO: 處理 採購資料:是否受機關補助:補助機關 可能要多筆
+                                            $values->{"{$category}:{$key}:{$skey}"} = $svalue;
                                         }
-                                        // TODO: 處理 採購資料:是否受機關補助:補助機關 可能要多筆
-                                        $values->{"{$category}:{$key}:{$skey}"} = $svalue;
                                     }
                                 }
+                            }
+                        } else {
+                            $value = trim($td_doms[1]->nodeValue);
+                            if ($tr_doms[0]->getElementsByTagName('td')->item(0)->nodeValue == html_entity_decode('&nbsp;')) {
+                                $columns = null;
+                                $value = [];
+
+                                foreach ($tr_doms[0]->getElementsByTagName('td')->item(1)->getElementsByTagName('tr') as $tr_dom) {
+                                    if (is_null($columns)) {
+                                        $columns = [];
+                                        foreach ($tr_dom->getElementsByTagName('td') as $td_dom) {
+                                            $columns[] = trim($td_dom->nodeValue);
+                                        }
+                                    } else {
+                                        $row = [];
+                                        foreach ($tr_dom->getElementsByTagName('td') as $td_dom) {
+                                            $row[] = trim($td_dom->nodeValue);
+                                        }
+                                        $v = array_combine($columns, $row);
+                                        if (array_key_exists('補助金額', $v)) {
+                                            $v['補助金額'] = trim(explode("\n", $v['補助金額'])[0]);
+                                        }
+                                        $value[] = $v;
+                                    }
+
+                                }
+                                array_shift($tr_doms);
                             }
                         }
                     } elseif ("{$category}:{$key}" == '領投開標:是否提供電子領標') {
@@ -1147,12 +1285,22 @@ class Parser
                         '採購資料:是否適用條約或協定之採購',
                     ])) {
                         foreach ($td_doms[1]->getElementsByTagName('span') as $span_dom) {
-                            if (!preg_match('#(.*)：$#', $span_dom->nodeValue, $matches)) {
+                            if (!preg_match('#(.*)：$#', trim($span_dom->nodeValue), $matches)) {
                                 continue;
                             }
                             $skey = $matches[1];
                             $value = trim($span_dom->nextSibling->nodeValue);
                             $values->{"{$category}:{$key}:{$skey}"} = $value;
+                        }
+
+                        foreach ([
+                            '是否適用WTO政府採購協定(GPA)',
+                            '是否適用臺紐經濟合作協定(ANZTEC)',
+                            '是否適用臺星經濟夥伴協定(ASTEP)',
+                        ] as $k) {
+                            if (property_exists($values, '採購資料:是否適用條約或協定之採購:' . $k) and !$values->{'採購資料:是否適用條約或協定之採購:' . $k}) {
+                                $values->{'採購資料:是否適用條約或協定之採購:' . $k} = '否';
+                            }
                         }
                         continue;
                     } elseif (in_array("{$category}:{$key}", [
@@ -1183,6 +1331,18 @@ class Parser
                             $values->{"{$category}:{$key}:remind"} = trim($div_dom->childNodes->item(1)->nodeValue);
                         }
 
+                    } elseif ($key == '決標方式') {
+                        // TODO: https://web.pcc.gov.tw/prkms/urlSelector/common/atm?pk=NTM3NDI0MDE=
+                        // 採購評選委員名單
+                        if ($doc->getElementById('spnLaw2211OriAwardWay')) {
+                            $value = trim($doc->getElementById('spnLaw2211OriAwardWay')->nodeValue);
+                        }
+                    } elseif (in_array($key, [
+                        '預算金額',
+                        '底價金額',
+                        '總決標金額',
+                    ])) { // 只取第一行
+                        $value = trim(explode("\n", trim(self::getDomValue($td_doms[1]))) [0]);
                     } elseif (in_array("{$category}:{$key}", [
                         '領投開標:是否須繳納押標金',
                         '其他:是否訂有與履約能力有關之基本資格',
@@ -1226,17 +1386,21 @@ class Parser
                 unset($values->{'其他:身心障礙福利機構團體或庇護工場生產物品及服務'});
             }
         }
+
+        // https://web.pcc.gov.tw/tps/atm/AtmAwardWithoutSso/QueryAtmAwardDetail?pkAtmMain=NTM3NDExNTA=
+        if (property_exists($values, '簽約廠商:簽約廠商家數')) {
+            if (!$values->{'簽約廠商:簽約廠商家數'}) {
+                unset($values->{'簽約廠商:簽約廠商家數'});
+            }
+        }
         if (property_exists($values, '無法決標公告:附加說明')) {
             $values->{'無法決標公告:附加說明'} = str_replace('<br/>', "\n", $values->{'無法決標公告:附加說明'});
         }
-        // https://web.pcc.gov.tw/tps/atm/AtmAwardWithoutSso/QueryAtmAwardDetail?pkAtmMain=NTM3NDExNTA=
-        if (property_exists($values, '已公告資料:是否應依公共工程專業技師簽證規則實施技師簽證')) {
-            if (strpos($content, 'var isEngin = "N";')) {
-                $v = '否';
-            } elseif (strpos($content, 'var isEngin = "Y";')) {
-                $v = '是';
-            }
-            $values->{'已公告資料:是否應依公共工程專業技師簽證規則實施技師簽證'} = $v;
+
+        if (property_exists($values, '決標資料:履約執行機關')) {
+            $v = $values->{'決標資料:履約執行機關'};
+            $v = implode("\n", preg_split("/\s+/", $v));
+            $values->{'決標資料:履約執行機關'} = $v;
         }
         return $values;
     }
