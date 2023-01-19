@@ -57,6 +57,8 @@ class Entity extends Pix_Table
             return   'anaa-' . base64_decode($matches[1]);
         } elseif (preg_match('#unPublish\.tpRead\.(.*)#', $url, $matches)) {
             return   'idpr-' . base64_decode($matches[1]);
+        } elseif (preg_match('#\.xml$#', $url, $matches)) {
+            return $url;
         } else {
             throw new Exception("unknown url: $url");
         }
