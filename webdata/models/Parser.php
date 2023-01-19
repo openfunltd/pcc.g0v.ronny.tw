@@ -453,6 +453,7 @@ class Parser
                         }
                     } elseif (in_array("{$category}:{$key}", [
                         '採購資料:是否適用條約或協定之採購',
+                        '已公告資料:是否適用條約或協定之採購',
                     ])) {
                         foreach ($td_doms[1]->getElementsByTagName('span') as $span_dom) {
                             if (!preg_match('#(.*)：$#', trim($span_dom->nodeValue), $matches)) {
@@ -471,8 +472,8 @@ class Parser
                             '是否適用臺紐經濟合作協定(ANZTEC)',
                             '是否適用臺星經濟夥伴協定(ASTEP)',
                         ] as $k) {
-                            if (property_exists($values, '採購資料:是否適用條約或協定之採購:' . $k) and !$values->{'採購資料:是否適用條約或協定之採購:' . $k}) {
-                                $values->{'採購資料:是否適用條約或協定之採購:' . $k} = '否';
+                            if (property_exists($values, "{$category}:{$key}:{$k}") and !$values->{"{$category}:{$key}:{$k}"}) {
+                                $values->{"{$category}:{$key}:{$k}"} = '否';
                             }
                         }
                         continue;
@@ -499,11 +500,8 @@ class Parser
                     } elseif (in_array("{$category}:{$key}", [
                         '已公告資料:原公告日期',
                     ])) {
-                        if ($div_dom = $td_doms[1]->getElementsByTagName('div')->item(0)) {
-                            $value = trim($div_dom->childNodes->item(0)->nodeValue);
-                            $values->{"{$category}:{$key}:remind"} = trim($div_dom->childNodes->item(1)->nodeValue);
-                        }
-
+                        $value = trim($td_doms[1]->childNodes->item(0)->nodeValue);
+                        $values->{"{$category}:{$key}:remind"} = trim($td_doms[1]->childNodes->item(1)->nodeValue);
                     } elseif ($key == '決標方式') {
                         // TODO: https://web.pcc.gov.tw/prkms/urlSelector/common/atm?pk=NTM3NDI0MDE=
                         // 採購評選委員名單
@@ -537,12 +535,25 @@ class Parser
                                 break;
                             }
 
-                            foreach ($td_doms[1]->getElementsByTagName('div') as $div_dom) {
-                                if (strpos($div_dom->nodeValue, '：')) {
-                                    list($skey, $svalue) = explode('：', $div_dom->nodeValue, 2);
-                                    $skey = trim($skey);
-                                    $svalue = trim($svalue);
+                            $span_hit = false;
+                            foreach ($td_doms[1]->getElementsByTagName('span') as $span_dom) {
+                                if (preg_match('#(.*)：$#', $span_dom->nodeValue, $matches)) {
+                                    $skey = $matches[1];
+                                    $svalue = trim(self::nextDOM($span_dom)->nodeValue);
                                     if ($svalue) {
+                                        $values->{"{$category}:{$key}:{$skey}"} = $svalue;
+                                        $span_hit = true;
+                                    }
+                                }
+                            }
+                            if (!$span_hit) {
+                                foreach ($td_doms[1]->getElementsByTagName('div') as $div_dom) {
+                                    if (preg_match('#([^：]*)：(.+)#um', preg_replace('#：\s+#', '：', $div_dom->nodeValue), $matches)) {
+                                        list($skey, $svalue) = explode('：', trim($div_dom->nodeValue), 2);
+                                        $svalue = trim($svalue);
+                                        $values->{"{$category}:{$key}:{$skey}"} = $svalue;
+                                    } elseif ('廠商應附具之特定資格證明文件：' == $div_dom->nodeValue) {
+                                        list($skey, $svalue) = explode('：', trim($div_dom->parentNode->nodeValue));
                                         $values->{"{$category}:{$key}:{$skey}"} = $svalue;
                                     }
                                 }
@@ -586,5 +597,16 @@ class Parser
             $values->{'決標資料:履約執行機關'} = $v;
         }
         return $values;
+    }
+
+    public static function nextDom($dom)
+    {
+        while ($dom = $dom->nextSibling) {
+            if ($dom->nodeName == '#text' and trim($dom->nodeValue) == '') {
+                continue;
+            }
+            break;
+        }
+        return $dom;
     }
 }
