@@ -221,6 +221,7 @@ while ($now >= $end_date) {
         } else if (strpos($old_content, '您尚未登入或已被登出本系統') !== FALSE) { // old format
         } else if (strpos($old_content, '500 Internal Server Error') !== FALSE) {
         } else if (strpos($old_content, 'Internal Server Error') !== FALSE) {
+        } else if (strpos($old_content, '502 Proxy Error') !== FALSE) {
         } else if (strpos($old_content, '尚無資料') !== FALSE ){
         } else if (strpos($old_content, '錯誤訊息') !== FALSE ){
         } elseif (strpos($old_content, '</html>') === false) { //
