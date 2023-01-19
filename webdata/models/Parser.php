@@ -467,6 +467,8 @@ class Parser
                             }
                         }
 
+                        // TODO: 有的理由HTML 抓不到，要從 #agreementJsonStr 抓
+
                         foreach ([
                             '是否適用WTO政府採購協定(GPA)',
                             '是否適用臺紐經濟合作協定(ANZTEC)',
@@ -585,6 +587,11 @@ class Parser
         if (property_exists($values, '簽約廠商:簽約廠商家數')) {
             if (!$values->{'簽約廠商:簽約廠商家數'}) {
                 unset($values->{'簽約廠商:簽約廠商家數'});
+            }
+        }
+        if (property_exists($values, '已公告資料:是否共同投標')) {
+            if (!$values->{'已公告資料:是否共同投標'}) {
+                unset($values->{'已公告資料:是否共同投標'});
             }
         }
         if (property_exists($values, '無法決標公告:附加說明')) {
