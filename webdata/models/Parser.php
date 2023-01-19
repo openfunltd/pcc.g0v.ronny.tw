@@ -965,7 +965,9 @@ class Parser
         }
         foreach ($dom->childNodes as $node) {
             if ($node->nodeName == '#text') {
-                $ret .= trim(preg_replace('#\s+#', ' ', $node->nodeValue));
+                $ret .= trim(preg_replace_callback('/&#\d+;/', function($m){
+                    return html_entity_decode($m[0]);
+                },  preg_replace('#\s+#', ' ', $node->nodeValue)));
                 continue;
             }
             if (in_array($node->nodeName, ['#comment', '#cdata-section'])) {
@@ -1242,6 +1244,20 @@ class Parser
                                 array_shift($tr_doms);
                             }
                         }
+                    } elseif ("{$category}:{$key}" == '採購資料:是否含特別預算') {
+                        $dom = $doc->getElementById('isSpecialBudget');
+                        if ($dom) {
+                            $value = mb_substr(trim($dom->nodeValue), 0, 1, 'UTF-8');
+                            if ($div_dom = $dom->getElementsByTagName('div')->item(0)) {
+                                foreach ($div_dom->childNodes as $dom) {
+                                    if (strpos($dom->nodeValue, '：')) {
+                                        list($k, $v) = explode('：', trim($dom->nodeValue), 2);
+                                        $values->{"{$category}:{$key}:{$k}"} = $v;
+                                    }
+                                }
+                            }
+                        }
+
                     } elseif ("{$category}:{$key}" == '領投開標:是否提供電子領標') {
                         $value = $doc->getElementById('isEobtain')->nodeValue;
                         foreach ($td_doms[1]->getElementsByTagName('div') as $node) {
@@ -1280,6 +1296,13 @@ class Parser
                             if ($a_dom->nodeValue == '投標須知下載') {
                                 $values->{"{$category}:{$key}:投標須知下載"} = "https://web.pcc.gov.tw" . $a_dom->getAttribute('href');
                             }
+                        }
+                    } elseif (in_array("{$category}:{$key}", [
+                        '採購資料:是否於駐地報紙或網站刊登招標公告',
+                    ])) {
+                        // https://web.pcc.gov.tw/prkms/urlSelector/common/atm?pk=NTM3NDI0NjY=
+                        if (strpos($value, '否') === 0) {
+                            $value = '否';
                         }
                     } elseif (in_array("{$category}:{$key}", [
                         '採購資料:是否適用條約或協定之採購',
