@@ -9,26 +9,22 @@ class Parser
 
         $records = array();
         foreach ($doc->getElementsByTagName('a') as $a_dom) {
-            if (strpos($a_dom->getAttribute('class'), 'tenderLink') !== false) {
+            if (strpos($a_dom->getAttribute('class'), 'tenderLinkUnPublish') !== false) {
                 $href = $a_dom->getAttribute('href');
-                if (preg_match('#/tps/tpam/main/tps/tpam/tpam_tender_detail.do\?searchMode=common&scope=F&primaryKey=([0-9]*)#', $href)) {
-                    $records[] = $href;
-                } elseif (preg_match('#/tps/main/pms/tps/atm/atmNonAwardAction.do\?searchMode=common&method=nonAwardContentForPublic&pkAtmMain=[0-9]#', $href)) {
-                    $records[] = $href;
-                } elseif (preg_match('#unPublish\.tender\.(.*)#', $href, $matches)) {
-                    // aaa
-                    $records[] = $href;
-                } elseif (preg_match('#unPublish\.tpRead\.(.*)#', $href, $matches)) {
+                if (preg_match('#unPublish.(tender|award).(.*)#', $href, $matches)) {
+                    // ttd
                     $records[] = $href;
                 } elseif (preg_match('#unPublish.nonAward.(.*)#', $href, $matches)) {
                     // anaa
                     $records[] = $href;
-				} elseif (preg_match('#unPublish.(tender|award).(.*)#', $href, $matches)) {
-                    // ttd
+                } elseif (preg_match('#unPublish\.tender\.(.*)#', $href, $matches)) {
+                    // aaa
                     $records[] = $href;
                 } elseif (preg_match('#unPublish\.gpa\.(.*)#', $href, $matches)) {
                     // TODO: 採購預告公告
                     continue;
+                } elseif (preg_match('#unPublish\.tpRead\.(.*)#', $href, $matches)) {
+                    $records[] = $href;
                 } elseif (preg_match('#unPublish\.(aspam|arpam)\.(.*)#', $href, $matches)) {
                     // TODO: 財物變更公告
                 } elseif (preg_match('#/opas/aspam/public/readOneAspamDetailNew#', $href, $matches)) {
@@ -37,17 +33,10 @@ class Parser
                     // TODO: 財物出租公告
                 } elseif (preg_match('#unPublish\.tpAppeal\.(.*)#', $href, $matches)) {
                     // TODO: 公開徵求廠商提供參考資料(不刊公報)
-                //} elseif (preg_match('#/tps/main/pms/tps/atm/atmAwardAction.do\?newEdit=false&searchMode=common&method=inquiryForPublic&pkAtmMain=[0-9]*&tenderCaseNo=[^&]*#', $href)) {
-                    //$records[] = $href;
-                } elseif (preg_match('#/tps/tps/tp/main/pms/tps/tp/InitialDocumentPublicRead.do\?pMenu=common&method=getTpReadFormal&tpReadSeq=[0-9]*#', $href)) {
-                    $records[] = $href;
-                } elseif ($href == '#') {
-                    // TODO: 財物變更公告
-                } elseif (preg_match('#javascript:document.tpAppealForm[0-9]*.submit\(\);#', $href)) {
-                    // TODO: 公開徵求廠商提供參考資料(不刊公報)
                 } else {
                     print_r($href);
-                    exit;
+                    echo "\n";
+                    readline($np_target . ' wrong!!!');
                 }
             }
         }
@@ -62,11 +51,9 @@ class Parser
 
         $records = array();
         foreach ($doc->getElementsByTagName('a') as $a_dom) {
-            if ($a_dom->getAttribute('class') != 'tenderLink') {
-                continue;
+            if ($a_dom->getAttribute('class') == 'tenderLinkPublish') {
+                $records[] = $a_dom->getAttribute('href');
             }
-
-            $records[] = $a_dom->getAttribute('href');
         }
         unset($dom);
 
@@ -155,8 +142,14 @@ class Parser
             if (strpos($table_dom->getAttribute('class'), 'tb_') !== 0) {
                 continue;
             }
+            if ($table_dom->parentNode->getAttribute('id') == 'mat_venderArguTd') {
+                continue;
+            }
             $prevdom = $table_dom;
             while ($prevdom = $prevdom->previousSibling) {
+                if ($prevdom->nodeName == 'div' and $prevdom->getAttribute('class') == 'title_1' and $prevdom->nodeValue == '作業歷程') {
+                    continue 2;
+                }
                 if ($prevdom->nodeName == 'div' and $prevdom->getAttribute('class') == 'title_1' and $prevdom->nodeValue == '作業歷程') {
                     continue 2;
                 }
@@ -172,9 +165,21 @@ class Parser
                 if (strpos($tr_dom->getAttribute('style'), 'display:none') !== false) {
                     continue;
                 }
-                foreach ($tr_dom->childNodes as $node) {
-                    if ($node->nodeName == 'td') {
-                        $td_doms[] = $node;
+                foreach ($tr_dom->childNodes as $td_dom) {
+                    if ($td_dom->nodeName == 'td') {
+                        // 如果只有一層 div.tbc2L ，就解開來
+                        $nodes = [];
+                        foreach ($td_dom->childNodes as $node) {
+                            if ($node->nodeName == '#text' and trim($node->nodeValue) == '') {
+                                continue;
+                            }
+                            $nodes[] = $node;
+                        }
+                        if (count($nodes) == 1 and $nodes[0]->nodeName == 'div') {
+                            $td_doms[] = $nodes[0];
+                        } else {
+                            $td_doms[] = $td_dom;
+                        }
                     }
                 }
 
@@ -311,6 +316,23 @@ class Parser
                         } elseif (strpos($content, 'var isEngin = "Y";')) {
                             $value = '是';
                         }
+                    } elseif ("{$category}:{$key}" == '最有利標:評選委員') {
+                        $table_dom = $td_doms[1]->getElementsByTagName('table')->item(0);
+                        $table_tr_doms = $table_dom->getElementsByTagName('tr');
+                        $columns = [];
+                        foreach ($table_tr_doms->item(0)->getElementsByTagName('th') as $th_dom) {
+                            $columns[] = trim($th_dom->nodeValue);
+                        }
+                        $value = [];
+                        for ($i = 1; $table_tr_doms->item($i); $i ++) {
+                            $rows = [];
+                            foreach ($table_tr_doms->item($i)->getElementsByTagName('td') as $td_dom) {
+                                $rows[] = trim($td_dom->nodeValue);
+                            }
+                            $value[] = array_combine($columns, $rows);
+                        }
+
+                        $value = [$value];
                     } elseif ("{$key}" == '是否受機關補助') {
                         if ($doc->getElementById('isGrant')) {
                             $value = $doc->getElementById('isGrant')->nodeValue;
@@ -359,6 +381,15 @@ class Parser
                                 }
                                 array_shift($tr_doms);
                             }
+                        }
+                    } elseif (in_array("{$category}:{$key}", [
+                        '採購資料:本採購案是否屬於建築工程',
+                    ])) {
+                        $nodes = $td_doms[1]->childNodes;
+                        $value = trim($nodes->item(0)->nodeValue);
+                        $remind = self::getDomValue($nodes->item(1));
+                        if ($remind) {
+                            $values->{"{$category}:{$key}:remind"} = trim($remind);
                         }
                     } elseif ("{$category}:{$key}" == '採購資料:是否含特別預算') {
                         $dom = $doc->getElementById('isSpecialBudget');
@@ -430,6 +461,9 @@ class Parser
                             $skey = $matches[1];
                             $value = trim($span_dom->nextSibling->nodeValue);
                             $values->{"{$category}:{$key}:{$skey}"} = $value;
+                            if (strpos($span_dom->nextSibling->nextSibling->nodeValue, '理由：')) {
+                                $values->{"{$category}:{$key}:{$skey}:理由"} = trim(explode('：', $span_dom->nextSibling->nextSibling->nodeValue)[1]);
+                            }
                         }
 
                         foreach ([
@@ -475,6 +509,9 @@ class Parser
                         // 採購評選委員名單
                         if ($doc->getElementById('spnLaw2211OriAwardWay')) {
                             $value = trim($doc->getElementById('spnLaw2211OriAwardWay')->nodeValue);
+                        } elseif ($doc->getElementById('fkPmsAwardWay')) {
+                            // https://web.pcc.gov.tw/tps/QueryTender/query/historyTenderDetail?fkPmsMainHist=NzIxODEyMzI=
+                            $value = trim($doc->getElementById('fkPmsAwardWay')->nodeValue);
                         }
                     } elseif (in_array($key, [
                         '預算金額',
@@ -487,21 +524,28 @@ class Parser
                         '其他:是否訂有與履約能力有關之基本資格',
                         '其他:本案採購契約是否採用主管機關訂定之範本',
                         '領投開標:是否須繳納履約保證金',
+                        '招標資料:是否已辦理公開閱覽',
+                        '其他:是否依據採購法第99條',
+                        '其他:是否訂有與履約能力有關之特定資格',
                     ])) {
-                        foreach ($td_doms[1]->childNodes as $n) {
-                            if (!trim($n->nodeValue)) {
-                                continue;
+                        if ($td_doms[1]->getElementsByTagName('div')->item(0)) { 
+                            foreach ($td_doms[1]->childNodes as $n) {
+                                if (!trim($n->nodeValue)) {
+                                    continue;
+                                }
+                                $value = trim($n->nodeValue);
+                                break;
                             }
-                            $value = trim($n->nodeValue);
-                            break;
-                        }
 
-                        foreach ($td_doms[1]->getElementsByTagName('div') as $div_dom) {
-                            if (strpos($div_dom->nodeValue, '：')) {
-                                list($skey, $svalue) = explode('：', $div_dom->nodeValue, 2);
-                                $skey = trim($skey);
-                                $svalue = trim($svalue);
-                                $values->{"{$category}:{$key}:{$skey}"} = $svalue;
+                            foreach ($td_doms[1]->getElementsByTagName('div') as $div_dom) {
+                                if (strpos($div_dom->nodeValue, '：')) {
+                                    list($skey, $svalue) = explode('：', $div_dom->nodeValue, 2);
+                                    $skey = trim($skey);
+                                    $svalue = trim($svalue);
+                                    if ($svalue) {
+                                        $values->{"{$category}:{$key}:{$skey}"} = $svalue;
+                                    }
+                                }
                             }
                         }
                     }
