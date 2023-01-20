@@ -34,37 +34,18 @@ while (true) {
     $total = count($records);
     error_log("parsing {$ymd} " . $total);
     foreach ($records as $seq => $record) {
-        if (strpos($record, 'xml')) {
-            $url = "http://web.pcc.gov.tw/prkms/prms-viewTenderDetailClient.do?ds={$ymd}&fn={$record}";
-        } elseif (preg_match('#/tps/tpam/main/tps/tpam/tpam_tender_detail.do\?searchMode=common&scope=F&primaryKey=([0-9]*)#', $record, $matches)) {
-            $url = "http://web.pcc.gov.tw" . $record;
-            $record = 'ttd-' . $matches[1];
-        } elseif (preg_match('#/tps/main/pms/tps/atm/atmNonAwardAction.do\?searchMode=common&method=nonAwardContentForPublic&pkAtmMain=([0-9]*)#', $record, $matches)) {
-            $url = "http://web.pcc.gov.tw" . $record;
-            $record = 'anaa-' . $matches[1];
-        } elseif (preg_match('#/tps/main/pms/tps/atm/atmAwardAction.do\?newEdit=false&searchMode=common&method=inquiryForPublic&pkAtmMain=([0-9]*)&tenderCaseNo=[^&]*#', $record, $matches)) {
-            $url = "http://web.pcc.gov.tw" . $record;
-            $record = 'aaa-' . $matches[1];
-        } elseif (preg_match('#/tps/tps/tp/main/pms/tps/tp/InitialDocumentPublicRead.do\?pMenu=common&method=getTpReadFormal&tpReadSeq=([0-9]*)#', $record, $matches)) {
-            $url = "http://web.pcc.gov.tw" . $record;
-            $record = 'idpr-' . $matches[1];
-            // http://web.pcc.gov.tw/tps/tps/tp/main/pms/tps/tp/InitialDocumentPublicRead.do?pMenu=common&method=getTpReadFormal&tpReadSeq=50019433
-            // TODO
-            continue;
-        } else {
-            var_dump($record);
-            exit;
-        }
-        $entry_source = "entry/{$year}/{$ymd}-{$record}.gz";
+        $filename = Entity::getFilename($record);
+        $url = Entity::updateUrl($record, $ymd, $filename);
+        $entry_source = "entry/{$year}/{$ymd}-{$filename}.gz";
 
         if (!file_exists($entry_source)) {
             continue;
         }
-        $entry_target = "entry-json/{$year}/{$ymd}-{$record}.json.gz";
+        $entry_target = "entry-json/{$year}/{$ymd}-{$filename}.json.gz";
         if (!file_exists("entry-json/{$year}")) {
             mkdir("entry-json/{$year}");
         }
-        if (file_exists($entry_target) and filesize($entry_target) > 30) {
+        if (file_exists($entry_target) and filesize($entry_target) > 300) {
             $obj = json_decode(gzdecode(file_get_contents($entry_target)));
             if ($obj->type == '政府電子採購網' or $obj->type == '◎' or is_numeric($obj->type)) {
                 // no continue
