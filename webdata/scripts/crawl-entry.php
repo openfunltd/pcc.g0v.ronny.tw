@@ -225,6 +225,7 @@ while ($now >= $end_date) {
         } else if (strpos($old_content, '尚無資料') !== FALSE ){
         } else if (strpos($old_content, '錯誤訊息') !== FALSE ){
         } elseif (strpos($old_content, '</html>') === false) { //
+        } elseif (preg_match('#<div class="title_1">\s+公告\s+</div>#', $old_content)) {
         } else {
             continue;
         }
