@@ -118,6 +118,21 @@ class Parser
         }
 
         if (!$type) {
+            foreach ($doc->getElementsByTagName('span') as $span_dom) {
+                if ($span_dom->getAttribute('class') == 'ff') {
+                    $type = $span_dom->nodeValue;
+                }
+            }
+        }
+
+        if (!$type) {
+            foreach ($doc->getElementsByTagName('font') as $span_dom) {
+                if ($span_dom->getAttribute('class') == 'ff') {
+                    $type = $span_dom->nodeValue;
+                }
+            }
+        }
+        if (!$type) {
             throw new Exception("找不到 type", 999);
         }
 
@@ -136,6 +151,26 @@ class Parser
         $prefix = array();
         $common_seq = array();
 
+
+        foreach ($doc->getElementsByTagName('table') as $table_dom) {
+            $td_doms = $table_dom->getElementsByTagName('td');
+            if (!$td_dom = $td_doms->item(0) or $td_dom->nodeValue != '標案內容') {
+                continue;
+            }
+            $category = $td_dom->nodeValue;
+            if (!$table_dom = $table_dom->getElementsByTagName('table')->item(0)) {
+                continue;
+            }
+            foreach ($table_dom->childNodes as $node) {
+                if ($node->nodeName != 'tr') {
+                    continue;
+                }
+                $td_doms = $node->getElementsByTagName('td');
+                $key = trim($td_doms[0]->nodeValue);
+                $value = trim($td_doms[1]->nodeValue);
+                $values->{"{$category}:{$key}"} = $value;
+            }
+        }
 
         // 從每個 tr 開始查起
         foreach ($doc->getElementsByTagName('table') as $table_dom) {
