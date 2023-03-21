@@ -79,6 +79,8 @@ class Entity extends Pix_Table
             $url = sprintf("https://web.pcc.gov.tw/prkms/urlSelector/common/tpRead?pk=" . base64_encode($matches[1]));
         } elseif (preg_match('#^ttd-(\d*)$#', $filename, $matches)) {
             $url = sprintf("https://web.pcc.gov.tw/prkms/urlSelector/common/tpam?pk=" . base64_encode($matches[1]));
+        } elseif (preg_match('#^[A-Z]#', $filename) and $date) {
+            $url = sprintf("https://web.pcc.gov.tw/prkms/tender/common/noticeDate/redirectPublic?ds=%s&fn=%s", urlencode($date), urlencode($filename));
         } else {
             throw new Exception(sprintf("unknown url: %s, date: %s, filename: %s", $oldurl, $date, $filename));
         }
