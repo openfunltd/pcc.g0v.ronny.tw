@@ -376,11 +376,15 @@ class ApiController extends Pix_Controller
     public function listbyunitAction()
     {
         $oid = strval($_GET['unit_id']);
+        $page = intval($_GET['page']) ?: 1;
 
-        $entities = Entity::search(array('oid' => $oid))->order('date DESC')->limit(1000);
+        $entities = Entity::search(array('oid' => $oid))->order('date DESC')->offset(1000 * ($page - 1))->limit(1000);
         $unit_name = Unit::find($oid)->name;
 
         $result = new StdClass;
+        $result->page = $page;
+        $result->total = count(Entity::search(['oid' => $oid]));
+        $result->total_page = ceil($result->total / 1000);
         $result->unit_name = $unit_name;
         foreach ($entities as $entity) {
             $record = $entity->toArray();
