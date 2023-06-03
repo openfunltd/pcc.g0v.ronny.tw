@@ -289,7 +289,10 @@ class ApiController extends Pix_Controller
         $curl = curl_init();
         $cmd = array(
             'query' => array(
-                'query_string' => array('query' => sprintf('title:"%s"', $result->query)),
+                'query_string' => [
+                    'query' => $result->query,
+                    'default_field' => 'title',
+                ],
             ),
             'size' => 100,
             'from' => $result->page * 100 - 100,
