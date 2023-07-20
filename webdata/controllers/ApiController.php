@@ -82,15 +82,10 @@ class ApiController extends Pix_Controller
             'sort' => array('date' => 'desc'),
         );
 
-        curl_setopt($curl, CURLOPT_URL, getenv('SEARCH_URL') . '/entry/_search');
-        curl_setopt($curl, CURLOPT_HEADER, 0);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($cmd));
-        curl_setopt($curl, CURLOPT_TIMEOUT, 10);
-        $ret = curl_exec($curl);
-        $ret = json_decode($ret);
+        $prefix = getenv('ELASTIC_PREFIX');
+        $ret = Elastic::dbQuery("/{$prefix}entry/_search", "GET", json_encode($cmd));
 
-        $result->total_records = $ret->hits->total;
+        $result->total_records = $ret->hits->total->value;
         $result->total_pages = ceil($ret->hits->total / 100);
         $result->took = 0;
         $match_ids = array();
@@ -140,13 +135,9 @@ class ApiController extends Pix_Controller
             ),
         );
 
-        curl_setopt($curl, CURLOPT_URL, getenv('SEARCH_URL') . '/entry/_search');
-        curl_setopt($curl, CURLOPT_HEADER, 0);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($cmd));
-        curl_setopt($curl, CURLOPT_TIMEOUT, 10);
-        $ret = curl_exec($curl);
-        $ret = json_decode($ret);
+        $prefix = getenv('ELASTIC_PREFIX');
+        $ret = Elastic::dbQuery("/{$prefix}entry/_search", "GET", json_encode($cmd));
+
         $buckets = ($ret->aggregations->uniq_specialbudget->buckets);
         $buckets = array_map(function($bucket){
             $bucket->search_api_url = $this->base . '/api/searchbyspecialbudget?query=' . urlencode($bucket->key);
@@ -175,16 +166,11 @@ class ApiController extends Pix_Controller
             'sort' => array('date' => 'desc'),
         );
 
-        curl_setopt($curl, CURLOPT_URL, getenv('SEARCH_URL') . '/entry/_search');
-        curl_setopt($curl, CURLOPT_HEADER, 0);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($cmd));
-        curl_setopt($curl, CURLOPT_TIMEOUT, 10);
-        $ret = curl_exec($curl);
-        $ret = json_decode($ret);
+        $prefix = getenv('ELASTIC_PREFIX');
+        $ret = Elastic::dbQuery("/{$prefix}entry/_search", "GET", json_encode($cmd));
 
-        $result->total_records = $ret->hits->total;
-        $result->total_pages = ceil($ret->hits->total / 100);
+        $result->total_records = $ret->hits->total->value;
+        $result->total_pages = ceil($ret->hits->total->value / 100);
         $result->took = 0;
         $match_ids = array();
         $unit_oids = array();
@@ -234,16 +220,11 @@ class ApiController extends Pix_Controller
             'sort' => array('date' => 'desc'),
         );
 
-        curl_setopt($curl, CURLOPT_URL, getenv('SEARCH_URL') . '/entry/_search');
-        curl_setopt($curl, CURLOPT_HEADER, 0);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($cmd));
-        curl_setopt($curl, CURLOPT_TIMEOUT, 10);
-        $ret = curl_exec($curl);
-        $ret = json_decode($ret);
+        $prefix = getenv('ELASTIC_PREFIX');
+        $ret = Elastic::dbQuery("/{$prefix}entry/_search", "GET", json_encode($cmd));
 
-        $result->total_records = $ret->hits->total;
-        $result->total_pages = ceil($ret->hits->total / 100);
+        $result->total_records = $ret->hits->total->value;
+        $result->total_pages = ceil($ret->hits->total->value / 100);
         $result->took = 0;
         $match_ids = array();
         $unit_oids = array();
@@ -299,16 +280,11 @@ class ApiController extends Pix_Controller
             'sort' => array('date' => 'desc'),
         );
 
-        curl_setopt($curl, CURLOPT_URL, getenv('SEARCH_URL') . '/entry/_search');
-        curl_setopt($curl, CURLOPT_HEADER, 0);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($cmd));
-        curl_setopt($curl, CURLOPT_TIMEOUT, 10);
-        $ret = curl_exec($curl);
-        $ret = json_decode($ret);
+        $prefix = getenv('ELASTIC_PREFIX');
+        $ret = Elastic::dbQuery("/{$prefix}entry/_search", "GET", json_encode($cmd));
 
-        $result->total_records = $ret->hits->total;
-        $result->total_pages = ceil($ret->hits->total / 100);
+        $result->total_records = $ret->hits->total->value;
+        $result->total_pages = ceil($ret->hits->total->value / 100);
         $result->took = 0;
         $match_ids = array();
         $unit_oids = array();
