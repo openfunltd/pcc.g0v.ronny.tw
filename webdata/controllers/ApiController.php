@@ -268,7 +268,18 @@ class ApiController extends Pix_Controller
                 $data = json_decode($entity->data->data);
                 $data = EntityData::updateURL($data, $entity);
                 $keys = $_GET['columns'];
-                $record['detail'] = array_combine($keys, array_map(function($k) use ($data) { return $data->{$k}; }, $keys));
+                $record['detail'] = [];
+                foreach ($keys as $k) {
+                    if (strpos($k, '/') === 0) {
+                        foreach ($data as $key => $value) {
+                            if (preg_match($k, $key)) {
+                                $record['detail'][$key] = $value;
+                            }
+                        }
+                    } else {
+                        $record['detail'][$k] = $data->{$k};
+                    }
+                }
             }
             $result->records[] = $record;
         }
