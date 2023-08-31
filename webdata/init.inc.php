@@ -17,6 +17,8 @@ Pix_Table::setLongQueryTime(3);
 // TODO: 之後要搭配 geoip
 date_default_timezone_set('Asia/Taipei');
 
-Pix_Table_Db::addDbFromURI(getenv('DATABASE_URL'));
+if (getenv('DATABASE_URL')) {
+    Pix_Table_Db::addDbFromURI(getenv('DATABASE_URL'));
+}
 Pix_Table::addStaticResultSetHelper('Pix_Array_Volume');
 

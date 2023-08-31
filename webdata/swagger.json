@@ -1,0 +1,42 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "台灣政府採購公告 API",
+        "version": "0.1"
+    },
+    "paths": {
+        "/api/getinfo": {
+            "get": {
+                "summary": "取得資料狀況 API",
+                "description": "取得資料狀況 API",
+                "operationId": "c2be57fa9c2b1090b36326a9fe46989d",
+                "responses": {
+                    "200": {
+                        "description": "取得資料狀況 API",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "最新資料時間": {
+                                            "type": "string",
+                                            "example": "2021-01-01T00:00:00+08:00"
+                                        },
+                                        "最舊資料時間": {
+                                            "type": "string",
+                                            "example": "2021-01-01T00:00:00+08:00"
+                                        },
+                                        "公告數": {
+                                            "type": "integer",
+                                            "example": 100
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

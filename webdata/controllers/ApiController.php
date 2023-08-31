@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @OA\Info(title="台灣政府採購公告 API", version="0.1")
+ */
 class ApiController extends Pix_Controller
 {
     public function init()
@@ -9,6 +12,20 @@ class ApiController extends Pix_Controller
         header('Access-Control-Allow-Methods: GET');
     }
 
+    /**
+     * 取得資料狀況 API
+     *
+     * @OA\Get(
+     *  path="/api/getinfo", summary="取得資料狀況 API", description="取得資料狀況 API",
+     *  @OA\Response( response="200", description="取得資料狀況 API",
+     *    @OA\JsonContent(
+     *      @OA\Property(property="最新資料時間", type="string", example="2021-01-01T00:00:00+08:00"),
+     *      @OA\Property(property="最舊資料時間", type="string", example="2021-01-01T00:00:00+08:00"),
+     *      @OA\Property(property="公告數", type="integer", example=100),
+     *    ),
+     *  ),
+     * )
+     */
     public function getinfoAction()
     {
         return $this->json(array(
