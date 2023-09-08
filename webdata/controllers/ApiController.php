@@ -292,7 +292,7 @@ class ApiController extends Pix_Controller
         $start = microtime(true);
 
         $result = new StdClass;
-	$words = explode(' ', $_GET['query']);
+	$words = explode(' ', strval($_GET['query']));
 	foreach ($words as &$word) {
 		if (strpos($word, '"') === false) { $word = '"' . $word . '"'; }
 	}
