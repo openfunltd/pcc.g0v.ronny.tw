@@ -37,6 +37,1603 @@
                     }
                 }
             }
+        },
+        "/api/": {
+            "get": {
+                "summary": "API 列表",
+                "description": "API 列表",
+                "operationId": "b808bcb4bdf9f41c4d87dfe6e7d9ae2f",
+                "responses": {
+                    "200": {
+                        "description": "API 列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "url": {
+                                                "type": "string",
+                                                "example": "https://pcc.g0v.ronny.tw/api/"
+                                            },
+                                            "description": {
+                                                "type": "string",
+                                                "example": "列出 API 列表"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "example": [
+                                    {
+                                        "url": "https://pcc.g0v.ronny.tw/api/getinfo",
+                                        "description": "列出最新最舊資料時間和總公告數等資訊，無參數"
+                                    },
+                                    {
+                                        "url": "https://pcc.g0v.ronny.tw/api/",
+                                        "description": "列出 API 列表"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/searchbycompanyid": {
+            "get": {
+                "summary": "依公司統一編號搜尋 API",
+                "description": "依公司統一編號搜尋 API",
+                "operationId": "77bd9362e4307b00d3df7afd83afca13",
+                "parameters": [
+                    {
+                        "name": "query",
+                        "in": "query",
+                        "description": "公司統一編號",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "頁數(1開始)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "columns",
+                        "in": "query",
+                        "description": "要顯示詳細欄位",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "依公司名稱搜尋 API",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "query": {
+                                            "type": "string",
+                                            "example": "搜尋公司名稱"
+                                        },
+                                        "page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "total_records": {
+                                            "type": "integer",
+                                            "example": 304
+                                        },
+                                        "total_pages": {
+                                            "type": "integer",
+                                            "example": 4
+                                        },
+                                        "took": {
+                                            "type": "number",
+                                            "example": 0.123
+                                        },
+                                        "records": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "date": {
+                                                        "type": "string",
+                                                        "example": "20230829"
+                                                    },
+                                                    "filename": {
+                                                        "type": "string",
+                                                        "example": "BDM-1-70370443"
+                                                    },
+                                                    "brief": {
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "公告類型"
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "example": "標案名稱"
+                                                            },
+                                                            "category": {
+                                                                "description": "This property may not necessarily appear in the response.",
+                                                                "type": "string",
+                                                                "example": "標的分類"
+                                                            },
+                                                            "companies": {
+                                                                "properties": {
+                                                                    "ids": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "公司１統編",
+                                                                            "公司２統編"
+                                                                        ]
+                                                                    },
+                                                                    "names": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "公司１名稱",
+                                                                            "公司２名稱"
+                                                                        ]
+                                                                    },
+                                                                    "id_key": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "properties": {
+                                                                                "公司１統編": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商1:廠商代碼"
+                                                                                    ]
+                                                                                },
+                                                                                "公司２統編": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商2:廠商代碼"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    },
+                                                                    "name_key": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "properties": {
+                                                                                "公司１名稱": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商1:廠商名稱",
+                                                                                        "決標品項:第1品項:得標廠商1:得標廠商"
+                                                                                    ]
+                                                                                },
+                                                                                "公司２名稱": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商2:廠商名稱",
+                                                                                        "決標品項:第1品項:未得標廠商1:未得標廠商"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "job_number": {
+                                                        "type": "string",
+                                                        "example": "nwda1120349"
+                                                    },
+                                                    "unit_id": {
+                                                        "type": "string",
+                                                        "example": "A.17.2.1"
+                                                    },
+                                                    "unit_name": {
+                                                        "type": "string",
+                                                        "example": "機關名稱"
+                                                    },
+                                                    "unit_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=A.17.2.1"
+                                                    },
+                                                    "tender_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/tender?unit_id=A.17.2.1&job_number=nwda1120349"
+                                                    },
+                                                    "detail": {
+                                                        "description": "This property may not necessarily appear in the response.",
+                                                        "type": "object"
+                                                    },
+                                                    "type": {
+                                                        "type": "string",
+                                                        "example": "公告類型"
+                                                    },
+                                                    "url": {
+                                                        "type": "string",
+                                                        "example": "https://web.pcc.gov.tw/prkms/tender/"
+                                                    },
+                                                    "機關資料:機關代碼": {
+                                                        "type": "string",
+                                                        "example": "3.76.47"
+                                                    },
+                                                    "機關資料:機關名稱": {
+                                                        "type": "string",
+                                                        "example": "彰化縣政府"
+                                                    },
+                                                    "fetched_at": {
+                                                        "type": "string",
+                                                        "example": "2017-08-28T15:03:43+08:00"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/searchbyspecialbudget": {
+            "get": {
+                "summary": "搜尋特定特別預算的標案 API",
+                "description": "搜尋特定特別預算的標案 API",
+                "operationId": "2f04930faf80c193f82bf793aea9aa48",
+                "parameters": [
+                    {
+                        "name": "query",
+                        "in": "query",
+                        "description": "特別預算名稱",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "頁數(1開始)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "搜尋特定特別預算的標案 API",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "query": {
+                                            "type": "string",
+                                            "example": "搜尋公司名稱"
+                                        },
+                                        "page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "total_records": {
+                                            "type": "integer",
+                                            "example": 304
+                                        },
+                                        "total_pages": {
+                                            "type": "integer",
+                                            "example": 4
+                                        },
+                                        "took": {
+                                            "type": "number",
+                                            "example": 0.123
+                                        },
+                                        "records": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "date": {
+                                                        "type": "string",
+                                                        "example": "20230829"
+                                                    },
+                                                    "filename": {
+                                                        "type": "string",
+                                                        "example": "BDM-1-70370443"
+                                                    },
+                                                    "brief": {
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "公告類型"
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "example": "標案名稱"
+                                                            },
+                                                            "category": {
+                                                                "description": "This property may not necessarily appear in the response.",
+                                                                "type": "string",
+                                                                "example": "標的分類"
+                                                            },
+                                                            "companies": {
+                                                                "properties": {
+                                                                    "ids": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "公司１統編",
+                                                                            "公司２統編"
+                                                                        ]
+                                                                    },
+                                                                    "names": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "公司１名稱",
+                                                                            "公司２名稱"
+                                                                        ]
+                                                                    },
+                                                                    "id_key": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "properties": {
+                                                                                "公司１統編": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商1:廠商代碼"
+                                                                                    ]
+                                                                                },
+                                                                                "公司２統編": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商2:廠商代碼"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    },
+                                                                    "name_key": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "properties": {
+                                                                                "公司１名稱": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商1:廠商名稱",
+                                                                                        "決標品項:第1品項:得標廠商1:得標廠商"
+                                                                                    ]
+                                                                                },
+                                                                                "公司２名稱": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商2:廠商名稱",
+                                                                                        "決標品項:第1品項:未得標廠商1:未得標廠商"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "job_number": {
+                                                        "type": "string",
+                                                        "example": "nwda1120349"
+                                                    },
+                                                    "unit_id": {
+                                                        "type": "string",
+                                                        "example": "A.17.2.1"
+                                                    },
+                                                    "unit_name": {
+                                                        "type": "string",
+                                                        "example": "機關名稱"
+                                                    },
+                                                    "unit_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=A.17.2.1"
+                                                    },
+                                                    "tender_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/tender?unit_id=A.17.2.1&job_number=nwda1120349"
+                                                    },
+                                                    "unit_url": {
+                                                        "type": "string",
+                                                        "example": "/index/unit/A.17.2.1"
+                                                    },
+                                                    "url": {
+                                                        "type": "string",
+                                                        "example": "/index/entry/20230829/BDM-1-70370443"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/searchbycompanyname": {
+            "get": {
+                "summary": "依公司名稱搜尋 API",
+                "description": "依公司名稱搜尋 API",
+                "operationId": "5e70a663ee4579c9eb6e1e018f21eb56",
+                "parameters": [
+                    {
+                        "name": "query",
+                        "in": "query",
+                        "description": "公司名稱",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "頁數(1開始)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "columns",
+                        "in": "query",
+                        "description": "要顯示詳細欄位",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "依公司名稱搜尋 API",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "query": {
+                                            "type": "string",
+                                            "example": "搜尋公司名稱"
+                                        },
+                                        "page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "total_records": {
+                                            "type": "integer",
+                                            "example": 304
+                                        },
+                                        "total_pages": {
+                                            "type": "integer",
+                                            "example": 4
+                                        },
+                                        "took": {
+                                            "type": "number",
+                                            "example": 0.123
+                                        },
+                                        "records": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "date": {
+                                                        "type": "string",
+                                                        "example": "20230829"
+                                                    },
+                                                    "filename": {
+                                                        "type": "string",
+                                                        "example": "BDM-1-70370443"
+                                                    },
+                                                    "brief": {
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "公告類型"
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "example": "標案名稱"
+                                                            },
+                                                            "category": {
+                                                                "description": "This property may not necessarily appear in the response.",
+                                                                "type": "string",
+                                                                "example": "標的分類"
+                                                            },
+                                                            "companies": {
+                                                                "properties": {
+                                                                    "ids": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "公司１統編",
+                                                                            "公司２統編"
+                                                                        ]
+                                                                    },
+                                                                    "names": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "公司１名稱",
+                                                                            "公司２名稱"
+                                                                        ]
+                                                                    },
+                                                                    "id_key": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "properties": {
+                                                                                "公司１統編": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商1:廠商代碼"
+                                                                                    ]
+                                                                                },
+                                                                                "公司２統編": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商2:廠商代碼"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    },
+                                                                    "name_key": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "properties": {
+                                                                                "公司１名稱": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商1:廠商名稱",
+                                                                                        "決標品項:第1品項:得標廠商1:得標廠商"
+                                                                                    ]
+                                                                                },
+                                                                                "公司２名稱": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商2:廠商名稱",
+                                                                                        "決標品項:第1品項:未得標廠商1:未得標廠商"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "job_number": {
+                                                        "type": "string",
+                                                        "example": "nwda1120349"
+                                                    },
+                                                    "unit_id": {
+                                                        "type": "string",
+                                                        "example": "A.17.2.1"
+                                                    },
+                                                    "unit_name": {
+                                                        "type": "string",
+                                                        "example": "機關名稱"
+                                                    },
+                                                    "unit_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=A.17.2.1"
+                                                    },
+                                                    "tender_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/tender?unit_id=A.17.2.1&job_number=nwda1120349"
+                                                    },
+                                                    "unit_url": {
+                                                        "type": "string",
+                                                        "example": "/index/unit/A.17.2.1"
+                                                    },
+                                                    "url": {
+                                                        "type": "string",
+                                                        "example": "/index/entry/20230829/BDM-1-70370443"
+                                                    },
+                                                    "detail": {
+                                                        "description": "This property may not necessarily appear in the response.",
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "公告類型"
+                                                            },
+                                                            "url": {
+                                                                "type": "string",
+                                                                "example": "https://web.pcc.gov.tw/prkms/tender/"
+                                                            },
+                                                            "機關資料:機關代碼": {
+                                                                "type": "string",
+                                                                "example": "3.76.47"
+                                                            },
+                                                            "機關資料:機關名稱": {
+                                                                "type": "string",
+                                                                "example": "彰化縣政府"
+                                                            },
+                                                            "fetched_at": {
+                                                                "type": "string",
+                                                                "example": "2017-08-28T15:03:43+08:00"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/searchbytitle": {
+            "get": {
+                "summary": "依標案名稱搜尋 API",
+                "description": "依標案名稱搜尋 API",
+                "operationId": "55354f8649957bfddac2ed69dd9ad59a",
+                "parameters": [
+                    {
+                        "name": "query",
+                        "in": "query",
+                        "description": "標案名稱",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "頁數(1開始)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "columns",
+                        "in": "query",
+                        "description": "要顯示詳細欄位",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "依公司名稱搜尋 API",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "query": {
+                                            "type": "string",
+                                            "example": "搜尋公司名稱"
+                                        },
+                                        "page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "total_records": {
+                                            "type": "integer",
+                                            "example": 304
+                                        },
+                                        "total_pages": {
+                                            "type": "integer",
+                                            "example": 4
+                                        },
+                                        "took": {
+                                            "type": "number",
+                                            "example": 0.123
+                                        },
+                                        "records": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "date": {
+                                                        "type": "string",
+                                                        "example": "20230829"
+                                                    },
+                                                    "filename": {
+                                                        "type": "string",
+                                                        "example": "BDM-1-70370443"
+                                                    },
+                                                    "brief": {
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "公告類型"
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "example": "標案名稱"
+                                                            },
+                                                            "category": {
+                                                                "description": "This property may not necessarily appear in the response.",
+                                                                "type": "string",
+                                                                "example": "標的分類"
+                                                            },
+                                                            "companies": {
+                                                                "properties": {
+                                                                    "ids": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "公司１統編",
+                                                                            "公司２統編"
+                                                                        ]
+                                                                    },
+                                                                    "names": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "公司１名稱",
+                                                                            "公司２名稱"
+                                                                        ]
+                                                                    },
+                                                                    "id_key": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "properties": {
+                                                                                "公司１統編": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商1:廠商代碼"
+                                                                                    ]
+                                                                                },
+                                                                                "公司２統編": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商2:廠商代碼"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    },
+                                                                    "name_key": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "properties": {
+                                                                                "公司１名稱": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商1:廠商名稱",
+                                                                                        "決標品項:第1品項:得標廠商1:得標廠商"
+                                                                                    ]
+                                                                                },
+                                                                                "公司２名稱": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商2:廠商名稱",
+                                                                                        "決標品項:第1品項:未得標廠商1:未得標廠商"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "job_number": {
+                                                        "type": "string",
+                                                        "example": "nwda1120349"
+                                                    },
+                                                    "unit_id": {
+                                                        "type": "string",
+                                                        "example": "A.17.2.1"
+                                                    },
+                                                    "unit_name": {
+                                                        "type": "string",
+                                                        "example": "機關名稱"
+                                                    },
+                                                    "unit_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=A.17.2.1"
+                                                    },
+                                                    "tender_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/tender?unit_id=A.17.2.1&job_number=nwda1120349"
+                                                    },
+                                                    "unit_url": {
+                                                        "type": "string",
+                                                        "example": "/index/unit/A.17.2.1"
+                                                    },
+                                                    "url": {
+                                                        "type": "string",
+                                                        "example": "/index/entry/20230829/BDM-1-70370443"
+                                                    },
+                                                    "detail": {
+                                                        "description": "This property may not necessarily appear in the response.",
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "公告類型"
+                                                            },
+                                                            "url": {
+                                                                "type": "string",
+                                                                "example": "https://web.pcc.gov.tw/prkms/tender/"
+                                                            },
+                                                            "機關資料:機關代碼": {
+                                                                "type": "string",
+                                                                "example": "3.76.47"
+                                                            },
+                                                            "機關資料:機關名稱": {
+                                                                "type": "string",
+                                                                "example": "彰化縣政府"
+                                                            },
+                                                            "fetched_at": {
+                                                                "type": "string",
+                                                                "example": "2017-08-28T15:03:43+08:00"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/listbydate": {
+            "get": {
+                "summary": "列出特定日期的標案公告列表 API",
+                "description": "列出特定日期的標案公告列表 API",
+                "operationId": "3518879b98e9e3aeb8d41c898b53a7a4",
+                "parameters": [
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "日期(YYYYMMDD)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "列出特定日期的標案公告列表 API",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "records": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "date": {
+                                                        "type": "string",
+                                                        "example": "20230829"
+                                                    },
+                                                    "filename": {
+                                                        "type": "string",
+                                                        "example": "BDM-1-70370443"
+                                                    },
+                                                    "brief": {
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "公告類型"
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "example": "標案名稱"
+                                                            },
+                                                            "category": {
+                                                                "description": "This property may not necessarily appear in the response.",
+                                                                "type": "string",
+                                                                "example": "標的分類"
+                                                            },
+                                                            "companies": {
+                                                                "properties": {
+                                                                    "ids": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "公司１統編",
+                                                                            "公司２統編"
+                                                                        ]
+                                                                    },
+                                                                    "names": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "公司１名稱",
+                                                                            "公司２名稱"
+                                                                        ]
+                                                                    },
+                                                                    "id_key": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "properties": {
+                                                                                "公司１統編": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商1:廠商代碼"
+                                                                                    ]
+                                                                                },
+                                                                                "公司２統編": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商2:廠商代碼"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    },
+                                                                    "name_key": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "properties": {
+                                                                                "公司１名稱": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商1:廠商名稱",
+                                                                                        "決標品項:第1品項:得標廠商1:得標廠商"
+                                                                                    ]
+                                                                                },
+                                                                                "公司２名稱": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商2:廠商名稱",
+                                                                                        "決標品項:第1品項:未得標廠商1:未得標廠商"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "job_number": {
+                                                        "type": "string",
+                                                        "example": "nwda1120349"
+                                                    },
+                                                    "unit_id": {
+                                                        "type": "string",
+                                                        "example": "A.17.2.1"
+                                                    },
+                                                    "unit_name": {
+                                                        "type": "string",
+                                                        "example": "機關名稱"
+                                                    },
+                                                    "unit_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=A.17.2.1"
+                                                    },
+                                                    "tender_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/tender?unit_id=A.17.2.1&job_number=nwda1120349"
+                                                    },
+                                                    "unit_url": {
+                                                        "type": "string",
+                                                        "example": "/index/unit/A.17.2.1"
+                                                    },
+                                                    "url": {
+                                                        "type": "string",
+                                                        "example": "/index/entry/20230829/BDM-1-70370443"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/unit": {
+            "get": {
+                "summary": "列出機關列表 API",
+                "description": "列出機關列表 API",
+                "operationId": "bc2c3ae5b250c335357308c3aef4cf5e",
+                "responses": {
+                    "200": {
+                        "description": "列出機關列表 API",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "unit_id_01": {
+                                            "type": "string",
+                                            "example": "機關名稱１"
+                                        },
+                                        "unit_id_02": {
+                                            "type": "string",
+                                            "example": "機關名稱２"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/listbyunit": {
+            "get": {
+                "summary": "列出特定機關的標案公告列表 API",
+                "description": "列出特定機關的標案公告列表 API",
+                "operationId": "a6f743cbeac96bd146315177312e58b8",
+                "parameters": [
+                    {
+                        "name": "unit_id",
+                        "in": "query",
+                        "description": "機關代碼",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "頁數(1開始)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "列出特定機關的標案公告列表 API",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 304
+                                        },
+                                        "total_page": {
+                                            "type": "integer",
+                                            "example": 4
+                                        },
+                                        "unit_name": {
+                                            "type": "string",
+                                            "example": "機關名稱"
+                                        },
+                                        "records": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "date": {
+                                                        "type": "string",
+                                                        "example": "20230829"
+                                                    },
+                                                    "filename": {
+                                                        "type": "string",
+                                                        "example": "BDM-1-70370443"
+                                                    },
+                                                    "brief": {
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "公告類型"
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "example": "標案名稱"
+                                                            },
+                                                            "category": {
+                                                                "description": "This property may not necessarily appear in the response.",
+                                                                "type": "string",
+                                                                "example": "標的分類"
+                                                            },
+                                                            "companies": {
+                                                                "properties": {
+                                                                    "ids": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "公司１統編",
+                                                                            "公司２統編"
+                                                                        ]
+                                                                    },
+                                                                    "names": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "公司１名稱",
+                                                                            "公司２名稱"
+                                                                        ]
+                                                                    },
+                                                                    "id_key": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "properties": {
+                                                                                "公司１統編": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商1:廠商代碼"
+                                                                                    ]
+                                                                                },
+                                                                                "公司２統編": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商2:廠商代碼"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    },
+                                                                    "name_key": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "properties": {
+                                                                                "公司１名稱": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商1:廠商名稱",
+                                                                                        "決標品項:第1品項:得標廠商1:得標廠商"
+                                                                                    ]
+                                                                                },
+                                                                                "公司２名稱": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商2:廠商名稱",
+                                                                                        "決標品項:第1品項:未得標廠商1:未得標廠商"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "job_number": {
+                                                        "type": "string",
+                                                        "example": "nwda1120349"
+                                                    },
+                                                    "unit_id": {
+                                                        "type": "string",
+                                                        "example": "A.17.2.1"
+                                                    },
+                                                    "unit_name": {
+                                                        "type": "string",
+                                                        "example": "機關名稱"
+                                                    },
+                                                    "unit_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=A.17.2.1"
+                                                    },
+                                                    "tender_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/tender?unit_id=A.17.2.1&job_number=nwda1120349"
+                                                    },
+                                                    "unit_url": {
+                                                        "type": "string",
+                                                        "example": "/index/unit/A.17.2.1"
+                                                    },
+                                                    "url": {
+                                                        "type": "string",
+                                                        "example": "/index/entry/20230829/BDM-1-70370443"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/tender": {
+            "get": {
+                "summary": "列出某個標案代碼的公告詳細資料 API",
+                "description": "列出某個標案代碼的公告詳細資料 API",
+                "operationId": "795ebc438595addfd2a700ff5472d7c0",
+                "parameters": [
+                    {
+                        "name": "unit_id",
+                        "in": "query",
+                        "description": "機關代碼",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "job_number",
+                        "in": "query",
+                        "description": "標案代碼",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "列出某個標案代碼的公告詳細資料 API",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "unit_name": {
+                                            "type": "string",
+                                            "example": "彰化縣政府"
+                                        },
+                                        "records": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "date": {
+                                                        "type": "string",
+                                                        "example": "20230829"
+                                                    },
+                                                    "filename": {
+                                                        "type": "string",
+                                                        "example": "BDM-1-70370443"
+                                                    },
+                                                    "brief": {
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "公告類型"
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "example": "標案名稱"
+                                                            },
+                                                            "category": {
+                                                                "description": "This property may not necessarily appear in the response.",
+                                                                "type": "string",
+                                                                "example": "標的分類"
+                                                            },
+                                                            "companies": {
+                                                                "properties": {
+                                                                    "ids": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "公司１統編",
+                                                                            "公司２統編"
+                                                                        ]
+                                                                    },
+                                                                    "names": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "公司１名稱",
+                                                                            "公司２名稱"
+                                                                        ]
+                                                                    },
+                                                                    "id_key": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "properties": {
+                                                                                "公司１統編": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商1:廠商代碼"
+                                                                                    ]
+                                                                                },
+                                                                                "公司２統編": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商2:廠商代碼"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    },
+                                                                    "name_key": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "properties": {
+                                                                                "公司１名稱": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商1:廠商名稱",
+                                                                                        "決標品項:第1品項:得標廠商1:得標廠商"
+                                                                                    ]
+                                                                                },
+                                                                                "公司２名稱": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "example": [
+                                                                                        "投標廠商:投標廠商2:廠商名稱",
+                                                                                        "決標品項:第1品項:未得標廠商1:未得標廠商"
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "job_number": {
+                                                        "type": "string",
+                                                        "example": "nwda1120349"
+                                                    },
+                                                    "unit_id": {
+                                                        "type": "string",
+                                                        "example": "A.17.2.1"
+                                                    },
+                                                    "detail": {
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "公告類型"
+                                                            },
+                                                            "url": {
+                                                                "type": "string",
+                                                                "example": "https://web.pcc.gov.tw/prkms/tender/"
+                                                            },
+                                                            "機關資料:機關代碼": {
+                                                                "type": "string",
+                                                                "example": "3.76.47"
+                                                            },
+                                                            "機關資料:機關名稱": {
+                                                                "type": "string",
+                                                                "example": "彰化縣政府"
+                                                            },
+                                                            "fetched_at": {
+                                                                "type": "string",
+                                                                "example": "2017-08-28T15:03:43+08:00"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "unit_name": {
+                                                        "type": "string",
+                                                        "example": "機關名稱"
+                                                    },
+                                                    "unit_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=A.17.2.1"
+                                                    },
+                                                    "tender_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/tender?unit_id=A.17.2.1&job_number=nwda1120349"
+                                                    },
+                                                    "unit_url": {
+                                                        "type": "string",
+                                                        "example": "/index/unit/A.17.2.1"
+                                                    },
+                                                    "url": {
+                                                        "type": "string",
+                                                        "example": "/index/entry/20230829/BDM-1-70370443"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "responses": {
+            "200": {
+                "description": "列出所有的特別預算 API",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "budgets": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "search_api_url": {
+                                                "description": "列出所有的特別預算 API",
+                                                "type": "string",
+                                                "example": "特別預算名稱"
+                                            }
+                                        },
+                                        "type": "object",
+                                        "example": [
+                                            {
+                                                "search_api_url": "https://pcc.g0v.ronny.tw/api/searchbyspecialbudget?query=特別預算名稱１"
+                                            },
+                                            {
+                                                "search_api_url": "https://pcc.g0v.ronny.tw/api/searchbyspecialbudget?query=特別預算名稱２"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "took": {
+                                    "type": "number",
+                                    "example": 0.123
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            }
         }
     }
 }
