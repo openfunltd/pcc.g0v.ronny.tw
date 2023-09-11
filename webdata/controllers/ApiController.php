@@ -304,6 +304,7 @@ class ApiController extends Pix_Controller
             'query' => array(
                 'query_string' => [
                     'query' => $result->query,
+                    'default_operator' => 'AND',
                     'default_field' => 'title',
                 ],
             ),
