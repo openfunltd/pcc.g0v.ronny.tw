@@ -292,11 +292,11 @@ class ApiController extends Pix_Controller
         $start = microtime(true);
 
         $result = new StdClass;
-	$words = explode(' ', strval($_GET['query']));
-	foreach ($words as &$word) {
-		if (strpos($word, '"') === false) { $word = '"' . $word . '"'; }
-	}
-	$result->query = implode(' ', $words);
+        $words = explode(' ', strval($_GET['query']));
+        foreach ($words as &$word) {
+            if (strpos($word, '"') === false) { $word = '"' . $word . '"'; }
+        }
+        $result->query = implode(' ', $words);
         $result->page = intval($_GET['page']) ?: 1;
 
         $curl = curl_init();
