@@ -37,7 +37,7 @@ while (true) {
             'date' => $entity->date,
             'oid' => $entity->oid,
             'companies' => $brief->companies,
-            'special_budget' => $entity_data->{'採購資料:是否含特別預算:特別預算類型'},
+            'special_budget' => property_exists($entity_data, '採購資料:是否含特別預算:特別預算類型') ? $entity_data->{'採購資料:是否含特別預算:特別預算類型'} : null,
         ];
         foreach ([
             '機關名稱',
