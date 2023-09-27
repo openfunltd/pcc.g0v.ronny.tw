@@ -9,6 +9,7 @@
  */
 class Pix_Table_Db_Adapter_PDO_Result
 {
+    public $_res = null;
     public function __construct($res)
     {
         $this->_res = $res;

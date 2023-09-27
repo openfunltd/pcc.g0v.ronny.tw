@@ -15,7 +15,9 @@ class EntityData extends Pix_Table
 
     public static function updateURL($data, $entity)
     {
-        if (property_exists($data, 'url')) {
+        if (property_exists($data, 'pkPmsMain')) {
+            $data->url = sprintf("https://web.pcc.gov.tw/tps/QueryTender/query/searchTenderDetail?pkPmsMain=%s", $data->pkPmsMain);
+        } else if (property_exists($data, 'url')) {
             $data->url = Entity::updateURL($data->url, $entity->date, $entity->filename);
         }
         return $data;

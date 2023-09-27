@@ -78,7 +78,7 @@ class Pix_Table_Db_Adapter_PgSQL extends Pix_Table_Db_Adapter_SQL
     public function query($sql)
     {
         $short_sql = mb_strimwidth($sql, 0, 512, "...len=" . strlen($sql));
-        if (Pix_Table::$_log_groups[Pix_Table::LOG_QUERY]) {
+        if (array_key_exists(Pix_Table::LOG_QUERY, Pix_Table::$_log_groups) and Pix_Table::$_log_groups[Pix_Table::LOG_QUERY]) {
             Pix_Table::debug(sprintf("[%s]\t%40s", $this->_path . $this->_name, $short_sql));
         }
 

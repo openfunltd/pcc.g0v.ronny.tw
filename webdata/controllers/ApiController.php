@@ -194,7 +194,7 @@ class ApiController extends Pix_Controller
         $ret = Elastic::dbQuery("/{$prefix}entry/_search", "GET", json_encode($cmd));
 
         $result->total_records = $ret->hits->total->value;
-        $result->total_pages = ceil($ret->hits->total / 100);
+        $result->total_pages = ceil($ret->hits->total->value / 100);
         $result->took = 0;
         $match_ids = array();
         $unit_oids = array();
@@ -606,7 +606,11 @@ class ApiController extends Pix_Controller
         $start = microtime(true);
 
         $result = new StdClass;
-        $result->query = strval($_GET['query']);
+        $words = explode(' ', strval($_GET['query']));
+        foreach ($words as &$word) {
+            if (strpos($word, '"') === false) { $word = '"' . $word . '"'; }
+        }
+        $result->query = implode(' ', $words);
         $result->page = intval($_GET['page']) ?: 1;
 
         $curl = curl_init();
@@ -614,6 +618,7 @@ class ApiController extends Pix_Controller
             'query' => array(
                 'query_string' => [
                     'query' => $result->query,
+                    'default_operator' => 'AND',
                     'default_field' => 'title',
                 ],
             ),
@@ -733,8 +738,8 @@ class ApiController extends Pix_Controller
             $record['unit_id'] = $record['oid'];
             unset($record['oid']);
             $record['unit_name'] = $unit_oids[$record['unit_id']];
-            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit_id=' . urlencode($record['unit_d']);
-            $record['tender_api_url'] = $this->base . '/api/tender?unit_id=' . urlencode($record['unit_d']) . '&job_number=' . urlencode($record['job_number']);
+            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit_id=' . urlencode($record['unit_id']);
+            $record['tender_api_url'] = $this->base . '/api/tender?unit_id=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
             $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
             $record['url'] = $entity->link();
             $result->records[] = $record;

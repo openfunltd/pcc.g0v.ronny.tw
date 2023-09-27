@@ -147,6 +147,19 @@ class Parser
             }
         }
         $values->url = $url;
+        preg_match_all('#pkPmsMain=([^=\'";]+)=#', $content, $matches);
+        if ($matches[1]) {
+            $ids = array_count_values($matches[1]);
+            if ($url == 'https://web.pcc.gov.tw/prkms/tender/common/noticeDate/redirectPublic?ds=20220916&fn=TIQ-1-70077583.xml') {
+                $values->pkPmsMain = 'NzAwODkzMjg=';
+            } else if (count($ids) > 1) {
+                error_log("多個 id: $url");
+                print_r($ids);
+                //throw new Exception("多個 id: $url", 999);
+                exit;
+            }
+            $values->pkPmsMain = array_keys($ids)[0];
+        }
 
         $prefix = array();
         $common_seq = array();
