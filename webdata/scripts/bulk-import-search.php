@@ -52,6 +52,8 @@ while (true) {
             '是否受機關補助',
             '依據法條',
             '歸屬計畫類別',
+            '總決標金額',
+            '預算金額',
         ] as $k) {
             foreach ($entity_data as $key => $value) {
                 if (strpos($key, '英文') === 0) {
@@ -59,7 +61,13 @@ while (true) {
                 }
                 $terms = explode(':', $key);
                 if (count($terms) == 2 and $terms[1] == $k) {
-                    if ($k == '是否受機關補助') {
+                    if ($k == '總決標金額' or $k == '預算金額') {
+                        if (!preg_match('#^([0-9,]+)元$#', $value, $matches)) {
+                            continue;
+                        }
+                        $data[$k] = intval(str_replace(',', '', $matches[1]));
+                        continue;
+                    } else if ($k == '是否受機關補助') {
                         $k = '機關補助';
                         if ($value == '否' or $value == '') {
                             $value = [];
