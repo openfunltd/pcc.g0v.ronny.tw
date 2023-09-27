@@ -103,7 +103,7 @@ class ApiController extends Pix_Controller
         $ret = Elastic::dbQuery("/{$prefix}entry/_search", "GET", json_encode($cmd));
 
         $result->total_records = $ret->hits->total->value;
-        $result->total_pages = ceil($ret->hits->total / 100);
+        $result->total_pages = ceil($ret->hits->total->value / 100);
         $result->took = 0;
         $match_ids = array();
         $unit_oids = array();
