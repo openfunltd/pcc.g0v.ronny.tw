@@ -105,12 +105,19 @@
                         }
                     },
                     {
-                        "name": "columns",
+                        "name": "columns[]",
                         "in": "query",
-                        "description": "要顯示詳細欄位",
+                        "description": "要額外多顯示詳細欄位",
                         "required": false,
                         "schema": {
-                            "type": "string"
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "default": [
+                                "機關資料:聯絡人",
+                                "已公告資料:決標方式"
+                            ]
                         }
                     }
                 ],
@@ -534,12 +541,19 @@
                         }
                     },
                     {
-                        "name": "columns",
+                        "name": "columns[]",
                         "in": "query",
-                        "description": "要顯示詳細欄位",
+                        "description": "要額外多顯示詳細欄位",
                         "required": false,
                         "schema": {
-                            "type": "string"
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "default": [
+                                "機關資料:聯絡人",
+                                "已公告資料:決標方式"
+                            ]
                         }
                     }
                 ],
@@ -771,12 +785,19 @@
                         }
                     },
                     {
-                        "name": "columns",
+                        "name": "columns[]",
                         "in": "query",
-                        "description": "要顯示詳細欄位",
+                        "description": "要額外多顯示詳細欄位",
                         "required": false,
                         "schema": {
-                            "type": "string"
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "default": [
+                                "機關資料:聯絡人",
+                                "已公告資料:決標方式"
+                            ]
                         }
                     }
                 ],
