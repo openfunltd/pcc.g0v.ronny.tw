@@ -93,7 +93,8 @@
                         "required": true,
                         "schema": {
                             "type": "string"
-                        }
+                        },
+                        "example": "38552170"
                     },
                     {
                         "name": "page",
@@ -102,7 +103,8 @@
                         "required": false,
                         "schema": {
                             "type": "integer"
-                        }
+                        },
+                        "example": 1
                     },
                     {
                         "name": "columns[]",
@@ -113,12 +115,12 @@
                             "type": "array",
                             "items": {
                                 "type": "string"
-                            },
-                            "default": [
-                                "機關資料:聯絡人",
-                                "已公告資料:決標方式"
-                            ]
-                        }
+                            }
+                        },
+                        "example": [
+                            "機關資料:聯絡人",
+                            "已公告資料:決標方式"
+                        ]
                     }
                 ],
                 "responses": {
@@ -314,6 +316,51 @@
                 }
             }
         },
+        "/api/searchallspecialbudget": {
+            "get": {
+                "summary": "列出所有的特別預算 API",
+                "description": "列出所有的特別預算 API",
+                "operationId": "e452f2c0b701c6ea184effdf27fed2ea",
+                "responses": {
+                    "200": {
+                        "description": "列出所有的特別預算 API",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "budgets": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "search_api_url": {
+                                                        "type": "string",
+                                                        "example": "特別預算名稱"
+                                                    }
+                                                },
+                                                "type": "object",
+                                                "example": [
+                                                    {
+                                                        "search_api_url": "https://pcc.g0v.ronny.tw/api/searchbyspecialbudget?query=特別預算名稱１"
+                                                    },
+                                                    {
+                                                        "search_api_url": "https://pcc.g0v.ronny.tw/api/searchbyspecialbudget?query=特別預算名稱２"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "took": {
+                                            "type": "number",
+                                            "example": 0.123
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/searchbyspecialbudget": {
             "get": {
                 "summary": "搜尋特定特別預算的標案 API",
@@ -327,7 +374,8 @@
                         "required": true,
                         "schema": {
                             "type": "string"
-                        }
+                        },
+                        "example": "前瞻基礎建設"
                     },
                     {
                         "name": "page",
@@ -335,7 +383,8 @@
                         "description": "頁數(1開始)",
                         "required": false,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -348,7 +397,7 @@
                                     "properties": {
                                         "query": {
                                             "type": "string",
-                                            "example": "搜尋公司名稱"
+                                            "example": "搜尋特別預算名稱"
                                         },
                                         "page": {
                                             "type": "integer",
@@ -529,7 +578,8 @@
                         "required": true,
                         "schema": {
                             "type": "string"
-                        }
+                        },
+                        "example": "開放文化基金會"
                     },
                     {
                         "name": "page",
@@ -538,7 +588,8 @@
                         "required": false,
                         "schema": {
                             "type": "integer"
-                        }
+                        },
+                        "example": 1
                     },
                     {
                         "name": "columns[]",
@@ -773,7 +824,8 @@
                         "required": true,
                         "schema": {
                             "type": "string"
-                        }
+                        },
+                        "example": "開放政府國家行動方案"
                     },
                     {
                         "name": "page",
@@ -782,7 +834,8 @@
                         "required": false,
                         "schema": {
                             "type": "integer"
-                        }
+                        },
+                        "example": 1
                     },
                     {
                         "name": "columns[]",
@@ -1017,7 +1070,8 @@
                         "required": true,
                         "schema": {
                             "type": "integer"
-                        }
+                        },
+                        "example": 20120701
                     }
                 ],
                 "responses": {
@@ -1219,7 +1273,8 @@
                         "required": true,
                         "schema": {
                             "type": "string"
-                        }
+                        },
+                        "example": "3.76.53.97.30"
                     },
                     {
                         "name": "page",
@@ -1228,7 +1283,8 @@
                         "required": false,
                         "schema": {
                             "type": "integer"
-                        }
+                        },
+                        "example": 1
                     }
                 ],
                 "responses": {
@@ -1417,7 +1473,8 @@
                         "required": true,
                         "schema": {
                             "type": "string"
-                        }
+                        },
+                        "example": "A.41"
                     },
                     {
                         "name": "job_number",
@@ -1426,7 +1483,8 @@
                         "required": true,
                         "schema": {
                             "type": "string"
-                        }
+                        },
+                        "example": "ndc109050"
                     }
                 ],
                 "responses": {
@@ -1610,47 +1668,6 @@
                                     "type": "object"
                                 }
                             }
-                        }
-                    }
-                }
-            }
-        }
-    },
-    "components": {
-        "responses": {
-            "200": {
-                "description": "列出所有的特別預算 API",
-                "content": {
-                    "application/json": {
-                        "schema": {
-                            "properties": {
-                                "budgets": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "search_api_url": {
-                                                "description": "列出所有的特別預算 API",
-                                                "type": "string",
-                                                "example": "特別預算名稱"
-                                            }
-                                        },
-                                        "type": "object",
-                                        "example": [
-                                            {
-                                                "search_api_url": "https://pcc.g0v.ronny.tw/api/searchbyspecialbudget?query=特別預算名稱１"
-                                            },
-                                            {
-                                                "search_api_url": "https://pcc.g0v.ronny.tw/api/searchbyspecialbudget?query=特別預算名稱２"
-                                            }
-                                        ]
-                                    }
-                                },
-                                "took": {
-                                    "type": "number",
-                                    "example": 0.123
-                                }
-                            },
-                            "type": "object"
                         }
                     }
                 }

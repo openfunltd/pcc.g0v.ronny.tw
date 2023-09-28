@@ -109,10 +109,11 @@ class ApiController extends Pix_Controller
      *
      * @OA\Get(
      *   path="/api/searchbycompanyid", summary="依公司統一編號搜尋 API", description="依公司統一編號搜尋 API",
-     *   @OA\Parameter( name="query", in="query", description="公司統一編號", required=true, @OA\Schema(type="string") ),
-     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer") ),
+     *   @OA\Parameter( name="query", in="query", description="公司統一編號", required=true, @OA\Schema(type="string"), example="38552170" ),
+     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer"), example=1 ),
      *   @OA\Parameter( name="columns[]", in="query", description="要額外多顯示詳細欄位", required=false,
-     *     @OA\Schema( type="array", @OA\Items( type="string"), default={"機關資料:聯絡人", "已公告資料:決標方式"} ),
+     *     example={"機關資料:聯絡人", "已公告資料:決標方式"},
+     *     @OA\Schema( type="array", @OA\Items( type="string"),),
      *   ),
      *   @OA\Response( response="200", description="依公司名稱搜尋 API",
      *     @OA\JsonContent( type="object",
@@ -232,7 +233,7 @@ class ApiController extends Pix_Controller
     /**
      * 列出所有的特別預算 API
      *
-     * @OA\Hidden(
+     * @OA\Get(
      *   path="/api/searchallspecialbudget", summary="列出所有的特別預算 API", description="列出所有的特別預算 API",
      *   @OA\Response( response="200", description="列出所有的特別預算 API",
      *     @OA\JsonContent( type="object",
@@ -285,11 +286,11 @@ class ApiController extends Pix_Controller
      *
      * @OA\Get(
      *   path="/api/searchbyspecialbudget", summary="搜尋特定特別預算的標案 API", description="搜尋特定特別預算的標案 API",
-     *   @OA\Parameter( name="query", in="query", description="特別預算名稱", required=true, @OA\Schema(type="string") ),
-     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer") ),
+     *   @OA\Parameter( name="query", in="query", description="特別預算名稱", required=true, @OA\Schema(type="string"), example="前瞻基礎建設"),
+     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer", example=1) ),
      *   @OA\Response( response="200", description="搜尋特定特別預算的標案 API",
      *     @OA\JsonContent( type="object",
-     *       @OA\Property(property="query", type="string", example="搜尋公司名稱"),
+     *       @OA\Property(property="query", type="string", example="搜尋特別預算名稱"),
      *       @OA\Property(property="page", type="integer", example=1),
      *       @OA\Property(property="total_records", type="integer", example=304),
      *       @OA\Property(property="total_pages", type="integer", example=4),
@@ -400,8 +401,8 @@ class ApiController extends Pix_Controller
      *
      * @OA\Get(
      *   path="/api/searchbycompanyname", summary="依公司名稱搜尋 API", description="依公司名稱搜尋 API",
-     *   @OA\Parameter( name="query", in="query", description="公司名稱", required=true, @OA\Schema(type="string") ),
-     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer") ),
+     *   @OA\Parameter( name="query", in="query", description="公司名稱", required=true, @OA\Schema(type="string"), example="開放文化基金會" ),
+     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer"), example=1 ),
      *   @OA\Parameter( name="columns[]", in="query", description="要額外多顯示詳細欄位", required=false,
      *     @OA\Schema( type="array", @OA\Items( type="string"), default={"機關資料:聯絡人", "已公告資料:決標方式"} ),
      *   ),
@@ -540,8 +541,8 @@ class ApiController extends Pix_Controller
      *
      * @OA\Get(
      *   path="/api/searchbytitle", summary="依標案名稱搜尋 API", description="依標案名稱搜尋 API",
-     *   @OA\Parameter( name="query", in="query", description="標案名稱", required=true, @OA\Schema(type="string") ),
-     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer") ),
+     *   @OA\Parameter( name="query", in="query", description="標案名稱", required=true, @OA\Schema(type="string"), example="開放政府國家行動方案" ),
+     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer"), example=1 ),
      *   @OA\Parameter( name="columns[]", in="query", description="要額外多顯示詳細欄位", required=false,
      *     @OA\Schema( type="array", @OA\Items( type="string"), default={"機關資料:聯絡人", "已公告資料:決標方式"} ),
      *   ),
@@ -677,7 +678,7 @@ class ApiController extends Pix_Controller
      *
      * @OA\Get(
      *   path="/api/listbydate", summary="列出特定日期的標案公告列表 API", description="列出特定日期的標案公告列表 API",
-     *   @OA\Parameter( name="date", in="query", description="日期(YYYYMMDD)", required=true, @OA\Schema(type="integer") ),
+     *   @OA\Parameter( name="date", in="query", description="日期(YYYYMMDD)", required=true, @OA\Schema(type="integer"), example=20120701 ),
      *   @OA\Response( response="200", description="列出特定日期的標案公告列表 API",
      *     @OA\JsonContent( type="object",
      *     @OA\Property(property="records", type="array",
@@ -776,8 +777,8 @@ class ApiController extends Pix_Controller
      * 列出特定機關的標案公告列表 API
      * @OA\Get(
      *   path="/api/listbyunit", summary="列出特定機關的標案公告列表 API", description="列出特定機關的標案公告列表 API",
-     *   @OA\Parameter( name="unit_id", in="query", description="機關代碼", required=true, @OA\Schema(type="string") ),
-     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer") ),
+     *   @OA\Parameter( name="unit_id", in="query", description="機關代碼", required=true, @OA\Schema(type="string"), example="3.76.53.97.30") ,
+     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer"), example=1 ),
      *   @OA\Response( response="200", description="列出特定機關的標案公告列表 API",
      *   @OA\JsonContent( type="object",
      *     @OA\Property(property="page", type="integer", example=1),
@@ -863,8 +864,8 @@ class ApiController extends Pix_Controller
      * 列出某個標案代碼的公告詳細資料 API
      * @OA\Get(
      *   path="/api/tender", summary="列出某個標案代碼的公告詳細資料 API", description="列出某個標案代碼的公告詳細資料 API",
-     *   @OA\Parameter( name="unit_id", in="query", description="機關代碼", required=true, @OA\Schema(type="string") ),
-     *   @OA\Parameter( name="job_number", in="query", description="標案代碼", required=true, @OA\Schema(type="string") ),
+     *   @OA\Parameter( name="unit_id", in="query", description="機關代碼", required=true, @OA\Schema(type="string"), example="A.41" ),
+     *   @OA\Parameter( name="job_number", in="query", description="標案代碼", required=true, @OA\Schema(type="string"), example="ndc109050" ),
      *   @OA\Response( response="200", description="列出某個標案代碼的公告詳細資料 API",
      *     @OA\JsonContent( type="object",
      *       @OA\Property(property="unit_name", type="string", example="彰化縣政府"),
