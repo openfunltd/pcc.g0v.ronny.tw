@@ -35,6 +35,29 @@ class ApiController extends Pix_Controller
         ));
     }
 
+    /**
+     * API 列表
+     *
+     * @OA\Get(
+     *   path="/api/", summary="API 列表", description="API 列表",
+     *   @OA\Response( response="200", description="API 列表",
+     *     @OA\JsonContent( type="array",
+     *       example={{
+     *         "url": "https://pcc.g0v.ronny.tw/api/getinfo",
+     *         "description": "列出最新最舊資料時間和總公告數等資訊，無參數"
+     *         },
+     *         {
+     *         "url": "https://pcc.g0v.ronny.tw/api/",
+     *         "description": "列出 API 列表"
+     *       }},
+     *       @OA\Items( type="object",
+     *         @OA\Property(property="url", type="string", example="https://pcc.g0v.ronny.tw/api/"),
+     *         @OA\Property(property="description", type="string", example="列出 API 列表"),
+     *       ),
+     *     ),
+     *   ),
+     * )
+     */
     public function indexAction()
     {
         return $this->json(array(
@@ -81,6 +104,77 @@ class ApiController extends Pix_Controller
         ));
     }
 
+    /**
+     * 依公司統一編號搜尋 API
+     *
+     * @OA\Get(
+     *   path="/api/searchbycompanyid", summary="依公司統一編號搜尋 API", description="依公司統一編號搜尋 API",
+     *   @OA\Parameter( name="query", in="query", description="公司統一編號", required=true, @OA\Schema(type="string"), example="38552170" ),
+     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer"), example=1 ),
+     *   @OA\Parameter( name="columns[]", in="query", description="要額外多顯示詳細欄位", required=false,
+     *     example={"機關資料:聯絡人", "已公告資料:決標方式"},
+     *     @OA\Schema( type="array", @OA\Items( type="string"),),
+     *   ),
+     *   @OA\Response( response="200", description="依公司名稱搜尋 API",
+     *     @OA\JsonContent( type="object",
+     *       @OA\Property(property="query", type="string", example="搜尋公司名稱"),
+     *       @OA\Property(property="page", type="integer", example=1),
+     *       @OA\Property(property="total_records", type="integer", example=304),
+     *       @OA\Property(property="total_pages", type="integer", example=4),
+     *       @OA\Property(property="took", type="number", example=0.123),
+     *       @OA\Property(property="records", type="array",
+     *         @OA\Items( type="object",
+     *           @OA\Property(property="date", type="string", example="20230829"),
+     *           @OA\Property(property="filename", type="string", example="BDM-1-70370443"),
+     *           @OA\Property(property="brief", type="object",
+     *             @OA\Property(property="type", type="string", example="公告類型"),
+     *             @OA\Property(property="title", type="string", example="標案名稱"),
+     *             @OA\Property(property="category", type="string", example="標的分類",
+     *               description="This property may not necessarily appear in the response."),
+     *             @OA\Property(property="companies", type="object",
+     *               @OA\Property(property="ids", type="array",
+     *                 @OA\Items( type="string"), example={"公司１統編", "公司２統編"}),
+     *               @OA\Property(property="names", type="array",
+     *                 @OA\Items( type="string"), example={"公司１名稱", "公司２名稱"}),
+     *               @OA\Property(property="id_key", type="array",
+     *		       @OA\Items( type="object",
+     *		         @OA\Property(property="公司１統編", type="array", @OA\Items( type="string"),
+     *		           example={"投標廠商:投標廠商1:廠商代碼"}),
+     *		         @OA\Property(property="公司２統編", type="array", @OA\Items( type="string"),
+     *		           example={"投標廠商:投標廠商2:廠商代碼"}),
+     *		       ),
+     *               ),
+     *               @OA\Property(property="name_key", type="array",
+     *                 @OA\Items( type="object",
+     *                   @OA\Property(property="公司１名稱", type="array", @OA\Items( type="string"),
+     *                     example = {"投標廠商:投標廠商1:廠商名稱", "決標品項:第1品項:得標廠商1:得標廠商"}),
+     *                   @OA\Property(property="公司２名稱", type="array", @OA\Items( type="string"),
+     *                     example = {"投標廠商:投標廠商2:廠商名稱", "決標品項:第1品項:未得標廠商1:未得標廠商"}),
+     *                 ),
+     *               ),
+     *             ),
+     *           ),
+     *           @OA\Property(property="job_number", type="string", example="nwda1120349"),
+     *           @OA\Property(property="unit_id", type="string", example="A.17.2.1"),
+     *           @OA\Property(property="unit_name", type="string", example="機關名稱"),
+     *           @OA\Property(property="unit_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=A.17.2.1"),
+     *           @OA\Property(property="tender_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/tender?unit_id=A.17.2.1&job_number=nwda1120349"),
+     *           @OA\Property(property="detail", type="object",
+     *             description="This property may not necessarily appear in the response."),
+     *             @OA\Property(property="type", type="string", example="公告類型"),
+     *             @OA\Property(property="url", type="string", example="https://web.pcc.gov.tw/prkms/tender/"),
+     *             @OA\Property(property="機關資料:機關代碼", type="string", example="3.76.47"),
+     *             @OA\Property(property="機關資料:機關名稱", type="string", example="彰化縣政府"),
+     *             @OA\Property(property="fetched_at", type="string", example="2017-08-28T15:03:43+08:00"),
+     *           ),
+     *         ),
+     *       ),
+     *     ),
+     *   ),
+     * )
+     */
     public function searchbycompanyidAction()
     {
         $start = microtime(true);
@@ -136,6 +230,28 @@ class ApiController extends Pix_Controller
         return $this->json($result);
     }
 
+    /**
+     * 列出所有的特別預算 API
+     *
+     * @OA\Get(
+     *   path="/api/searchallspecialbudget", summary="列出所有的特別預算 API", description="列出所有的特別預算 API",
+     *   @OA\Response( response="200", description="列出所有的特別預算 API",
+     *     @OA\JsonContent( type="object",
+     *       @OA\Property(property="budgets", type="array",
+     *         @OA\Items( type="object", example={{
+     *           "search_api_url": "https://pcc.g0v.ronny.tw/api/searchbyspecialbudget?query=特別預算名稱１",
+     *           },
+     *           {
+     *           "search_api_url": "https://pcc.g0v.ronny.tw/api/searchbyspecialbudget?query=特別預算名稱２",
+     *           }},
+     *           @OA\Property(property="search_api_url", type="string", example="特別預算名稱"),
+     *         ),
+     *       ),
+     *     @OA\Property(property="took", type="number", example=0.123),
+     *     ),
+     *   ),
+     * )
+     */
     public function searchallspecialbudgetAction()
     {
         $start = microtime(true);
@@ -165,6 +281,67 @@ class ApiController extends Pix_Controller
         return $this->json($result);
     }
 
+    /**
+     * 搜尋特定特別預算的標案 API
+     *
+     * @OA\Get(
+     *   path="/api/searchbyspecialbudget", summary="搜尋特定特別預算的標案 API", description="搜尋特定特別預算的標案 API",
+     *   @OA\Parameter( name="query", in="query", description="特別預算名稱", required=true, @OA\Schema(type="string"), example="前瞻基礎建設"),
+     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer", example=1) ),
+     *   @OA\Response( response="200", description="搜尋特定特別預算的標案 API",
+     *     @OA\JsonContent( type="object",
+     *       @OA\Property(property="query", type="string", example="搜尋特別預算名稱"),
+     *       @OA\Property(property="page", type="integer", example=1),
+     *       @OA\Property(property="total_records", type="integer", example=304),
+     *       @OA\Property(property="total_pages", type="integer", example=4),
+     *       @OA\Property(property="took", type="number", example=0.123),
+     *       @OA\Property(property="records", type="array",
+     *         @OA\Items( type="object",
+     *           @OA\Property(property="date", type="string", example="20230829"),
+     *           @OA\Property(property="filename", type="string", example="BDM-1-70370443"),
+     *           @OA\Property(property="brief", type="object",
+     *             @OA\Property(property="type", type="string", example="公告類型"),
+     *             @OA\Property(property="title", type="string", example="標案名稱"),
+     *             @OA\Property(property="category", type="string", example="標的分類",
+     *               description="This property may not necessarily appear in the response."),
+     *             @OA\Property(property="companies", type="object",
+     *               @OA\Property(property="ids", type="array",
+     *                 @OA\Items( type="string"), example={"公司１統編", "公司２統編"}),
+     *               @OA\Property(property="names", type="array",
+     *                 @OA\Items( type="string"), example={"公司１名稱", "公司２名稱"}),
+     *               @OA\Property(property="id_key", type="array",
+     *		       @OA\Items( type="object",
+     *		         @OA\Property(property="公司１統編", type="array", @OA\Items( type="string"),
+     *		           example={"投標廠商:投標廠商1:廠商代碼"}),
+     *		         @OA\Property(property="公司２統編", type="array", @OA\Items( type="string"),
+     *		           example={"投標廠商:投標廠商2:廠商代碼"}),
+     *		       ),
+     *               ),
+     *               @OA\Property(property="name_key", type="array",
+     *                 @OA\Items( type="object",
+     *                   @OA\Property(property="公司１名稱", type="array", @OA\Items( type="string"),
+     *                     example = {"投標廠商:投標廠商1:廠商名稱", "決標品項:第1品項:得標廠商1:得標廠商"}),
+     *                   @OA\Property(property="公司２名稱", type="array", @OA\Items( type="string"),
+     *                     example = {"投標廠商:投標廠商2:廠商名稱", "決標品項:第1品項:未得標廠商1:未得標廠商"}),
+     *                 ),
+     *               ),
+     *             ),
+     *           ),
+     *           @OA\Property(property="job_number", type="string", example="nwda1120349"),
+     *           @OA\Property(property="unit_id", type="string", example="A.17.2.1"),
+     *           @OA\Property(property="unit_name", type="string", example="機關名稱"),
+     *           @OA\Property(property="unit_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=A.17.2.1"),
+     *           @OA\Property(property="tender_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/tender?unit_id=A.17.2.1&job_number=nwda1120349"),
+     *           @OA\Property(property="unit_url", type="string", example="/index/unit/A.17.2.1"),
+     *           @OA\Property(property="url", type="string", example="/index/entry/20230829/BDM-1-70370443"),
+     *         ),
+     *       ),
+     *     ),
+     *   ),
+     * )
+     */
     public function searchbyspecialbudgetAction()
     {
         $start = microtime(true);
@@ -219,6 +396,78 @@ class ApiController extends Pix_Controller
         return $this->json($result);
     }
 
+    /**
+     * 依公司名稱搜尋 API
+     *
+     * @OA\Get(
+     *   path="/api/searchbycompanyname", summary="依公司名稱搜尋 API", description="依公司名稱搜尋 API",
+     *   @OA\Parameter( name="query", in="query", description="公司名稱", required=true, @OA\Schema(type="string"), example="開放文化基金會" ),
+     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer"), example=1 ),
+     *   @OA\Parameter( name="columns[]", in="query", description="要額外多顯示詳細欄位", required=false,
+     *     @OA\Schema( type="array", @OA\Items( type="string"), default={"機關資料:聯絡人", "已公告資料:決標方式"} ),
+     *   ),
+     *   @OA\Response( response="200", description="依公司名稱搜尋 API",
+     *     @OA\JsonContent( type="object",
+     *       @OA\Property(property="query", type="string", example="搜尋公司名稱"),
+     *       @OA\Property(property="page", type="integer", example=1),
+     *       @OA\Property(property="total_records", type="integer", example=304),
+     *       @OA\Property(property="total_pages", type="integer", example=4),
+     *       @OA\Property(property="took", type="number", example=0.123),
+     *       @OA\Property(property="records", type="array",
+     *         @OA\Items( type="object",
+     *           @OA\Property(property="date", type="string", example="20230829"),
+     *           @OA\Property(property="filename", type="string", example="BDM-1-70370443"),
+     *           @OA\Property(property="brief", type="object",
+     *             @OA\Property(property="type", type="string", example="公告類型"),
+     *             @OA\Property(property="title", type="string", example="標案名稱"),
+     *             @OA\Property(property="category", type="string", example="標的分類",
+     *               description="This property may not necessarily appear in the response."),
+     *             @OA\Property(property="companies", type="object",
+     *               @OA\Property(property="ids", type="array",
+     *                 @OA\Items( type="string"), example={"公司１統編", "公司２統編"}),
+     *               @OA\Property(property="names", type="array",
+     *                 @OA\Items( type="string"), example={"公司１名稱", "公司２名稱"}),
+     *               @OA\Property(property="id_key", type="array",
+     *		       @OA\Items( type="object",
+     *		         @OA\Property(property="公司１統編", type="array", @OA\Items( type="string"),
+     *		           example={"投標廠商:投標廠商1:廠商代碼"}),
+     *		         @OA\Property(property="公司２統編", type="array", @OA\Items( type="string"),
+     *		           example={"投標廠商:投標廠商2:廠商代碼"}),
+     *		       ),
+     *               ),
+     *               @OA\Property(property="name_key", type="array",
+     *                 @OA\Items( type="object",
+     *                   @OA\Property(property="公司１名稱", type="array", @OA\Items( type="string"),
+     *                     example = {"投標廠商:投標廠商1:廠商名稱", "決標品項:第1品項:得標廠商1:得標廠商"}),
+     *                   @OA\Property(property="公司２名稱", type="array", @OA\Items( type="string"),
+     *                     example = {"投標廠商:投標廠商2:廠商名稱", "決標品項:第1品項:未得標廠商1:未得標廠商"}),
+     *                 ),
+     *               ),
+     *             ),
+     *           ),
+     *           @OA\Property(property="job_number", type="string", example="nwda1120349"),
+     *           @OA\Property(property="unit_id", type="string", example="A.17.2.1"),
+     *           @OA\Property(property="unit_name", type="string", example="機關名稱"),
+     *           @OA\Property(property="unit_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=A.17.2.1"),
+     *           @OA\Property(property="tender_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/tender?unit_id=A.17.2.1&job_number=nwda1120349"),
+     *           @OA\Property(property="unit_url", type="string", example="/index/unit/A.17.2.1"),
+     *           @OA\Property(property="url", type="string", example="/index/entry/20230829/BDM-1-70370443"),
+     *           @OA\Property(property="detail", type="object",
+     *             description="This property may not necessarily appear in the response.",
+     *             @OA\Property(property="type", type="string", example="公告類型"),
+     *             @OA\Property(property="url", type="string", example="https://web.pcc.gov.tw/prkms/tender/"),
+     *             @OA\Property(property="機關資料:機關代碼", type="string", example="3.76.47"),
+     *             @OA\Property(property="機關資料:機關名稱", type="string", example="彰化縣政府"),
+     *             @OA\Property(property="fetched_at", type="string", example="2017-08-28T15:03:43+08:00"),
+     *           ),
+     *         ),
+     *       ),
+     *     ),
+     *   ),
+     * )
+     */
     public function searchbycompanynameAction()
     {
         $start = microtime(true);
@@ -287,6 +536,78 @@ class ApiController extends Pix_Controller
         return $this->json($result);
     }
 
+    /**
+     * 依標案名稱搜尋 API
+     *
+     * @OA\Get(
+     *   path="/api/searchbytitle", summary="依標案名稱搜尋 API", description="依標案名稱搜尋 API",
+     *   @OA\Parameter( name="query", in="query", description="標案名稱", required=true, @OA\Schema(type="string"), example="開放政府國家行動方案" ),
+     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer"), example=1 ),
+     *   @OA\Parameter( name="columns[]", in="query", description="要額外多顯示詳細欄位", required=false,
+     *     @OA\Schema( type="array", @OA\Items( type="string"), default={"機關資料:聯絡人", "已公告資料:決標方式"} ),
+     *   ),
+     *   @OA\Response( response="200", description="依公司名稱搜尋 API",
+     *     @OA\JsonContent( type="object",
+     *       @OA\Property(property="query", type="string", example="搜尋公司名稱"),
+     *       @OA\Property(property="page", type="integer", example=1),
+     *       @OA\Property(property="total_records", type="integer", example=304),
+     *       @OA\Property(property="total_pages", type="integer", example=4),
+     *       @OA\Property(property="took", type="number", example=0.123),
+     *       @OA\Property(property="records", type="array",
+     *         @OA\Items( type="object",
+     *           @OA\Property(property="date", type="string", example="20230829"),
+     *           @OA\Property(property="filename", type="string", example="BDM-1-70370443"),
+     *           @OA\Property(property="brief", type="object",
+     *             @OA\Property(property="type", type="string", example="公告類型"),
+     *             @OA\Property(property="title", type="string", example="標案名稱"),
+     *             @OA\Property(property="category", type="string", example="標的分類",
+     *               description="This property may not necessarily appear in the response."),
+     *             @OA\Property(property="companies", type="object",
+     *               @OA\Property(property="ids", type="array",
+     *                 @OA\Items( type="string"), example={"公司１統編", "公司２統編"}),
+     *               @OA\Property(property="names", type="array",
+     *                 @OA\Items( type="string"), example={"公司１名稱", "公司２名稱"}),
+     *               @OA\Property(property="id_key", type="array",
+     *		       @OA\Items( type="object",
+     *		         @OA\Property(property="公司１統編", type="array", @OA\Items( type="string"),
+     *		           example={"投標廠商:投標廠商1:廠商代碼"}),
+     *		         @OA\Property(property="公司２統編", type="array", @OA\Items( type="string"),
+     *		           example={"投標廠商:投標廠商2:廠商代碼"}),
+     *		       ),
+     *               ),
+     *               @OA\Property(property="name_key", type="array",
+     *                 @OA\Items( type="object",
+     *                   @OA\Property(property="公司１名稱", type="array", @OA\Items( type="string"),
+     *                     example = {"投標廠商:投標廠商1:廠商名稱", "決標品項:第1品項:得標廠商1:得標廠商"}),
+     *                   @OA\Property(property="公司２名稱", type="array", @OA\Items( type="string"),
+     *                     example = {"投標廠商:投標廠商2:廠商名稱", "決標品項:第1品項:未得標廠商1:未得標廠商"}),
+     *                 ),
+     *               ),
+     *             ),
+     *           ),
+     *           @OA\Property(property="job_number", type="string", example="nwda1120349"),
+     *           @OA\Property(property="unit_id", type="string", example="A.17.2.1"),
+     *           @OA\Property(property="unit_name", type="string", example="機關名稱"),
+     *           @OA\Property(property="unit_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=A.17.2.1"),
+     *           @OA\Property(property="tender_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/tender?unit_id=A.17.2.1&job_number=nwda1120349"),
+     *           @OA\Property(property="unit_url", type="string", example="/index/unit/A.17.2.1"),
+     *           @OA\Property(property="url", type="string", example="/index/entry/20230829/BDM-1-70370443"),
+     *           @OA\Property(property="detail", type="object",
+     *             description="This property may not necessarily appear in the response.",
+     *             @OA\Property(property="type", type="string", example="公告類型"),
+     *             @OA\Property(property="url", type="string", example="https://web.pcc.gov.tw/prkms/tender/"),
+     *             @OA\Property(property="機關資料:機關代碼", type="string", example="3.76.47"),
+     *             @OA\Property(property="機關資料:機關名稱", type="string", example="彰化縣政府"),
+     *             @OA\Property(property="fetched_at", type="string", example="2017-08-28T15:03:43+08:00"),
+     *           ),
+     *         ),
+     *       ),
+     *     ),
+     *   ),
+     * )
+     */
     public function searchbytitleAction()
     {
         $start = microtime(true);
@@ -352,6 +673,61 @@ class ApiController extends Pix_Controller
         return $this->json($result);
     }
 
+    /**
+     * 列出特定日期的標案公告列表 API
+     *
+     * @OA\Get(
+     *   path="/api/listbydate", summary="列出特定日期的標案公告列表 API", description="列出特定日期的標案公告列表 API",
+     *   @OA\Parameter( name="date", in="query", description="日期(YYYYMMDD)", required=true, @OA\Schema(type="integer"), example=20120701 ),
+     *   @OA\Response( response="200", description="列出特定日期的標案公告列表 API",
+     *     @OA\JsonContent( type="object",
+     *     @OA\Property(property="records", type="array",
+     *         @OA\Items( type="object",
+     *           @OA\Property(property="date", type="string", example="20230829"),
+     *           @OA\Property(property="filename", type="string", example="BDM-1-70370443"),
+     *           @OA\Property(property="brief", type="object",
+     *             @OA\Property(property="type", type="string", example="公告類型"),
+     *             @OA\Property(property="title", type="string", example="標案名稱"),
+     *             @OA\Property(property="category", type="string", example="標的分類",
+     *               description="This property may not necessarily appear in the response."),
+     *             @OA\Property(property="companies", type="object",
+     *               @OA\Property(property="ids", type="array",
+     *                 @OA\Items( type="string"), example={"公司１統編", "公司２統編"}),
+     *               @OA\Property(property="names", type="array",
+     *                 @OA\Items( type="string"), example={"公司１名稱", "公司２名稱"}),
+     *               @OA\Property(property="id_key", type="array",
+     *		       @OA\Items( type="object",
+     *		         @OA\Property(property="公司１統編", type="array", @OA\Items( type="string"),
+     *		           example={"投標廠商:投標廠商1:廠商代碼"}),
+     *		         @OA\Property(property="公司２統編", type="array", @OA\Items( type="string"),
+     *		           example={"投標廠商:投標廠商2:廠商代碼"}),
+     *		       ),
+     *               ),
+     *               @OA\Property(property="name_key", type="array",
+     *                 @OA\Items( type="object",
+     *                   @OA\Property(property="公司１名稱", type="array", @OA\Items( type="string"),
+     *                     example = {"投標廠商:投標廠商1:廠商名稱", "決標品項:第1品項:得標廠商1:得標廠商"}),
+     *                   @OA\Property(property="公司２名稱", type="array", @OA\Items( type="string"),
+     *                     example = {"投標廠商:投標廠商2:廠商名稱", "決標品項:第1品項:未得標廠商1:未得標廠商"}),
+     *                 ),
+     *               ),
+     *             ),
+     *           ),
+     *           @OA\Property(property="job_number", type="string", example="nwda1120349"),
+     *           @OA\Property(property="unit_id", type="string", example="A.17.2.1"),
+     *           @OA\Property(property="unit_name", type="string", example="機關名稱"),
+     *           @OA\Property(property="unit_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=A.17.2.1"),
+     *           @OA\Property(property="tender_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/tender?unit_id=A.17.2.1&job_number=nwda1120349"),
+     *           @OA\Property(property="unit_url", type="string", example="/index/unit/A.17.2.1"),
+     *           @OA\Property(property="url", type="string", example="/index/entry/20230829/BDM-1-70370443"),
+     *         ),
+     *       ),
+     *     ),
+     *   ),
+     * )
+     */
     public function listbydateAction()
     {
         $date = intval($_GET['date']);
@@ -378,6 +754,18 @@ class ApiController extends Pix_Controller
         return $this->json($result);
     }
 
+    /**
+     *	列出機關列表 API
+     *	@OA\Get(
+     *	  path="/api/unit", summary="列出機關列表 API", description="列出機關列表 API",
+     *	  @OA\Response( response="200", description="列出機關列表 API",
+     *	    @OA\JsonContent( type="object",
+     *	      @OA\Property(property="unit_id_01", type="string", example="機關名稱１"),
+     *	      @OA\Property(property="unit_id_02", type="string", example="機關名稱２"),
+     *	    ),
+     *	  ),
+     *	)
+     */
     public function unitAction()
     {
         return $this->json(
@@ -385,6 +773,65 @@ class ApiController extends Pix_Controller
         );
     }
 
+    /**
+     * 列出特定機關的標案公告列表 API
+     * @OA\Get(
+     *   path="/api/listbyunit", summary="列出特定機關的標案公告列表 API", description="列出特定機關的標案公告列表 API",
+     *   @OA\Parameter( name="unit_id", in="query", description="機關代碼", required=true, @OA\Schema(type="string"), example="3.76.53.97.30") ,
+     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer"), example=1 ),
+     *   @OA\Response( response="200", description="列出特定機關的標案公告列表 API",
+     *   @OA\JsonContent( type="object",
+     *     @OA\Property(property="page", type="integer", example=1),
+     *     @OA\Property(property="total", type="integer", example=304),
+     *     @OA\Property(property="total_page", type="integer", example=4),
+     *     @OA\Property(property="unit_name", type="string", example="機關名稱"),
+     *     @OA\Property(property="records", type="array",
+     *         @OA\Items( type="object",
+     *           @OA\Property(property="date", type="string", example="20230829"),
+     *           @OA\Property(property="filename", type="string", example="BDM-1-70370443"),
+     *           @OA\Property(property="brief", type="object",
+     *             @OA\Property(property="type", type="string", example="公告類型"),
+     *             @OA\Property(property="title", type="string", example="標案名稱"),
+     *             @OA\Property(property="category", type="string", example="標的分類",
+     *               description="This property may not necessarily appear in the response."),
+     *             @OA\Property(property="companies", type="object",
+     *               @OA\Property(property="ids", type="array",
+     *                 @OA\Items( type="string"), example={"公司１統編", "公司２統編"}),
+     *               @OA\Property(property="names", type="array",
+     *                 @OA\Items( type="string"), example={"公司１名稱", "公司２名稱"}),
+     *               @OA\Property(property="id_key", type="array",
+     *		       @OA\Items( type="object",
+     *		         @OA\Property(property="公司１統編", type="array", @OA\Items( type="string"),
+     *		           example={"投標廠商:投標廠商1:廠商代碼"}),
+     *		         @OA\Property(property="公司２統編", type="array", @OA\Items( type="string"),
+     *		           example={"投標廠商:投標廠商2:廠商代碼"}),
+     *		       ),
+     *               ),
+     *               @OA\Property(property="name_key", type="array",
+     *                 @OA\Items( type="object",
+     *                   @OA\Property(property="公司１名稱", type="array", @OA\Items( type="string"),
+     *                     example = {"投標廠商:投標廠商1:廠商名稱", "決標品項:第1品項:得標廠商1:得標廠商"}),
+     *                   @OA\Property(property="公司２名稱", type="array", @OA\Items( type="string"),
+     *                     example = {"投標廠商:投標廠商2:廠商名稱", "決標品項:第1品項:未得標廠商1:未得標廠商"}),
+     *                 ),
+     *               ),
+     *             ),
+     *           ),
+     *           @OA\Property(property="job_number", type="string", example="nwda1120349"),
+     *           @OA\Property(property="unit_id", type="string", example="A.17.2.1"),
+     *           @OA\Property(property="unit_name", type="string", example="機關名稱"),
+     *           @OA\Property(property="unit_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=A.17.2.1"),
+     *           @OA\Property(property="tender_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/tender?unit_id=A.17.2.1&job_number=nwda1120349"),
+     *           @OA\Property(property="unit_url", type="string", example="/index/unit/A.17.2.1"),
+     *           @OA\Property(property="url", type="string", example="/index/entry/20230829/BDM-1-70370443"),
+     *         ),
+     *       ),
+     *     ),
+     *   ),
+     * )
+     */
     public function listbyunitAction()
     {
         $oid = strval($_GET['unit_id']);
@@ -413,6 +860,69 @@ class ApiController extends Pix_Controller
         return $this->json($result);
     }
 
+    /**
+     * 列出某個標案代碼的公告詳細資料 API
+     * @OA\Get(
+     *   path="/api/tender", summary="列出某個標案代碼的公告詳細資料 API", description="列出某個標案代碼的公告詳細資料 API",
+     *   @OA\Parameter( name="unit_id", in="query", description="機關代碼", required=true, @OA\Schema(type="string"), example="A.41" ),
+     *   @OA\Parameter( name="job_number", in="query", description="標案代碼", required=true, @OA\Schema(type="string"), example="ndc109050" ),
+     *   @OA\Response( response="200", description="列出某個標案代碼的公告詳細資料 API",
+     *     @OA\JsonContent( type="object",
+     *       @OA\Property(property="unit_name", type="string", example="彰化縣政府"),
+     *       @OA\Property(property="records", type="array",
+     *         @OA\Items( type="object",
+     *           @OA\Property(property="date", type="string", example="20230829"),
+     *           @OA\Property(property="filename", type="string", example="BDM-1-70370443"),
+     *           @OA\Property(property="brief", type="object",
+     *             @OA\Property(property="type", type="string", example="公告類型"),
+     *             @OA\Property(property="title", type="string", example="標案名稱"),
+     *             @OA\Property(property="category", type="string", example="標的分類",
+     *               description="This property may not necessarily appear in the response."),
+     *             @OA\Property(property="companies", type="object",
+     *               @OA\Property(property="ids", type="array",
+     *                 @OA\Items( type="string"), example={"公司１統編", "公司２統編"}),
+     *               @OA\Property(property="names", type="array",
+     *                 @OA\Items( type="string"), example={"公司１名稱", "公司２名稱"}),
+     *               @OA\Property(property="id_key", type="array",
+     *		       @OA\Items( type="object",
+     *		         @OA\Property(property="公司１統編", type="array", @OA\Items( type="string"),
+     *		           example={"投標廠商:投標廠商1:廠商代碼"}),
+     *		         @OA\Property(property="公司２統編", type="array", @OA\Items( type="string"),
+     *		           example={"投標廠商:投標廠商2:廠商代碼"}),
+     *		       ),
+     *               ),
+     *               @OA\Property(property="name_key", type="array",
+     *                 @OA\Items( type="object",
+     *                   @OA\Property(property="公司１名稱", type="array", @OA\Items( type="string"),
+     *                     example = {"投標廠商:投標廠商1:廠商名稱", "決標品項:第1品項:得標廠商1:得標廠商"}),
+     *                   @OA\Property(property="公司２名稱", type="array", @OA\Items( type="string"),
+     *                     example = {"投標廠商:投標廠商2:廠商名稱", "決標品項:第1品項:未得標廠商1:未得標廠商"}),
+     *                 ),
+     *               ),
+     *             ),
+     *           ),
+     *           @OA\Property(property="job_number", type="string", example="nwda1120349"),
+     *           @OA\Property(property="unit_id", type="string", example="A.17.2.1"),
+     *           @OA\Property(property="detail", type="object",
+     *             @OA\Property(property="type", type="string", example="公告類型"),
+     *             @OA\Property(property="url", type="string", example="https://web.pcc.gov.tw/prkms/tender/"),
+     *             @OA\Property(property="機關資料:機關代碼", type="string", example="3.76.47"),
+     *             @OA\Property(property="機關資料:機關名稱", type="string", example="彰化縣政府"),
+     *             @OA\Property(property="fetched_at", type="string", example="2017-08-28T15:03:43+08:00"),
+     *           ),
+     *           @OA\Property(property="unit_name", type="string", example="機關名稱"),
+     *           @OA\Property(property="unit_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=A.17.2.1"),
+     *           @OA\Property(property="tender_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/tender?unit_id=A.17.2.1&job_number=nwda1120349"),
+     *           @OA\Property(property="unit_url", type="string", example="/index/unit/A.17.2.1"),
+     *           @OA\Property(property="url", type="string", example="/index/entry/20230829/BDM-1-70370443"),
+     *         ),
+     *       ),
+     *     ),
+     *   ),
+     * )
+     */
     public function tenderAction()
     {
         $oid = strval($_GET['unit_id']);
