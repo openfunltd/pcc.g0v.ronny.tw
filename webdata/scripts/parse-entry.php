@@ -5,6 +5,7 @@ date_default_timezone_set('Asia/Taipei');
 ini_set('memory_limit', '2G');
 
 $now = $_SERVER['argv'][1] ? strtotime($_SERVER['argv'][1]) : time();
+$until = $_SERVER['argv'][2] ? strtotime($_SERVER['argv'][2]) : time() - 10 * 86400;
 
 while (true) {
     $ymd = date('Ymd', $now);
@@ -12,7 +13,7 @@ while (true) {
     $list_source = "list/{$ymd}.html.gz";
     $list_source_np = "list/np-{$ymd}.html.gz";
 
-    if ($ymd < 19990101) {
+    if ($ymd < date('Ymd', $until)) {
         break;
     }
     $now -= 86400;
