@@ -9,6 +9,8 @@ set_include_path(__DIR__ . '/stdlibs/pixframework/'
 
 Pix_Loader::registerAutoLoad();
 
+APILimiter::check("/tmp/pcc-api-limiter", '/api');
+
 if (file_exists(__DIR__ . '/config.php')) {
     include(__DIR__ . '/config.php');
 }
