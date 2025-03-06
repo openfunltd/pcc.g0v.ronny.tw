@@ -16,6 +16,9 @@ class APILimiter
         } else {
             $ip_data = json_decode(file_get_contents($path . "/{$ip}.json"));
         }
+        if (!is_array($ip_data)) {
+            $ip_data = [];
+        }
 
         $block = false;
         if ($ip_data[10] ?? false and $ip_data[10][0] > time() - 10) {
@@ -33,7 +36,7 @@ class APILimiter
         }
         file_put_contents($path . "/{$ip}.json", json_encode($ip_data));
         if ($block) {
-            header('HTTP/1.1 429 Too Many Requests');
+            header('HTTP/1.1 429 Too Many Requests', true, 429);
             exit;
         }
     }
