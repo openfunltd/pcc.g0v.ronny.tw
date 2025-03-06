@@ -10,6 +10,9 @@ class APILimiter
         if (!file_exists($path)) {
             mkdir($path);
         }
+        if (!file_exists($path . '/blocking')) {
+            mkdir($path . '/blocking');
+        }
         $ip = $_SERVER['REMOTE_ADDR'];
         if (!file_exists($path . "/{$ip}.json")) {
             $ip_data = []; 
@@ -36,9 +39,11 @@ class APILimiter
         }
         file_put_contents($path . "/{$ip}.json", json_encode($ip_data));
         if ($block) {
+            file_put_contents($path . "/blocking/{$ip}.json", json_encode($ip_data));
             header('HTTP/1.1 429 Too Many Requests', true, 429);
             exit;
         }
+        unlink($path . "/blocking/{$ip}.json");
     }
 }
 
