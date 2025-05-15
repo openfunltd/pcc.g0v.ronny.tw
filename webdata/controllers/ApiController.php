@@ -28,11 +28,19 @@ class ApiController extends Pix_Controller
      */
     public function getinfoAction()
     {
-        return $this->json(array(
+        OpenFunAPIHelper::checkUsage([
+            'project' => 'pcc',
+            'class' => "getinfo",
+        ]);
+        $result = array(
             '最新資料時間' => date('c', strtotime(Entity::search(1)->max('date')->date)),
             '最舊資料時間' => date('c', strtotime(Entity::search(1)->min('date')->date)),
             '公告數' => count(Entity::search(1)),
-        ));
+        );
+        OpenFunAPIHelper::apiDone([
+            'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+        ]);
+        return $this->json($result);
     }
 
     /**
@@ -60,7 +68,11 @@ class ApiController extends Pix_Controller
      */
     public function indexAction()
     {
-        return $this->json(array(
+        OpenFunAPIHelper::checkUsage([
+            'project' => 'pcc',
+            'class' => "index",
+        ]);
+        $result = array(
             array(
                 'url' => $this->base . '/api/getinfo',
                 'description' => '列出最新最舊資料時間和總公告數等資訊，無參數',
@@ -101,7 +113,11 @@ class ApiController extends Pix_Controller
                 'url' => $this->base . '/api/searchbyspecialbudget',
                 'description' => '搜尋特定特別預算的標案 query: 特別預算名稱',
             ),
-        ));
+        );
+        OpenFunAPIHelper::apiDone([
+            'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+        ]);
+        return $this->json($result);
     }
 
     /**
@@ -177,6 +193,10 @@ class ApiController extends Pix_Controller
      */
     public function searchbycompanyidAction()
     {
+        OpenFunAPIHelper::checkUsage([
+            'project' => 'pcc',
+            'class' => "searchbycompanyid",
+        ]);
         $start = microtime(true);
 
         $result = new StdClass;
@@ -227,6 +247,9 @@ class ApiController extends Pix_Controller
             $result->records[] = $record;
         }
         $result->took = microtime(true) - $start;
+        OpenFunAPIHelper::apiDone([
+            'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+        ]);
         return $this->json($result);
     }
 
@@ -254,6 +277,10 @@ class ApiController extends Pix_Controller
      */
     public function searchallspecialbudgetAction()
     {
+        OpenFunAPIHelper::checkUsage([
+            'project' => 'pcc',
+            'class' => "searchallspecialbudget",
+        ]);
         $start = microtime(true);
 
         $result = new StdClass;
@@ -278,6 +305,9 @@ class ApiController extends Pix_Controller
         }, $buckets);
         $result->buckets = $buckets;
         $result->took = microtime(true) - $start;
+        OpenFunAPIHelper::apiDone([
+            'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+        ]);
         return $this->json($result);
     }
 
@@ -344,6 +374,10 @@ class ApiController extends Pix_Controller
      */
     public function searchbyspecialbudgetAction()
     {
+        OpenFunAPIHelper::checkUsage([
+            'project' => 'pcc',
+            'class' => "searchbyspecialbudget",
+        ]);
         $start = microtime(true);
 
         $result = new StdClass;
@@ -393,6 +427,9 @@ class ApiController extends Pix_Controller
             $result->records[] = $record;
         }
         $result->took = microtime(true) - $start;
+        OpenFunAPIHelper::apiDone([
+            'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+        ]);
         return $this->json($result);
     }
 
@@ -470,6 +507,10 @@ class ApiController extends Pix_Controller
      */
     public function searchbycompanynameAction()
     {
+        OpenFunAPIHelper::checkUsage([
+            'project' => 'pcc',
+            'class' => "searchbycompanyname",
+        ]);
         $start = microtime(true);
 
         $result = new StdClass;
@@ -533,6 +574,9 @@ class ApiController extends Pix_Controller
             $result->records[] = $record;
         }
         $result->took = microtime(true) - $start;
+        OpenFunAPIHelper::apiDone([
+            'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+        ]);
         return $this->json($result);
     }
 
@@ -610,6 +654,10 @@ class ApiController extends Pix_Controller
      */
     public function searchbytitleAction()
     {
+        OpenFunAPIHelper::checkUsage([
+            'project' => 'pcc',
+            'class' => "searchbytitle",
+        ]);
         $start = microtime(true);
 
         $result = new StdClass;
@@ -670,6 +718,9 @@ class ApiController extends Pix_Controller
             $result->records[] = $record;
         }
         $result->took = microtime(true) - $start;
+        OpenFunAPIHelper::apiDone([
+            'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+        ]);
         return $this->json($result);
     }
 
@@ -730,6 +781,10 @@ class ApiController extends Pix_Controller
      */
     public function listbydateAction()
     {
+        OpenFunAPIHelper::checkUsage([
+            'project' => 'pcc',
+            'class' => "listbydate",
+        ]);
         $date = intval($_GET['date']);
         $entities = Entity::search(array('date' => $date));
         $units = Unit::search(1)->searchIn('oid', $entities->toArray('oid'))->toArray('name');
@@ -751,6 +806,9 @@ class ApiController extends Pix_Controller
             $record['url'] = $entity->link();
             $result->records[] = $record;
         }
+        OpenFunAPIHelper::apiDone([
+            'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+        ]);
         return $this->json($result);
     }
 
@@ -768,9 +826,15 @@ class ApiController extends Pix_Controller
      */
     public function unitAction()
     {
-        return $this->json(
-            Unit::search(1)->toArray('name')
-        );
+        OpenFunAPIHelper::checkUsage([
+            'project' => 'pcc',
+            'class' => "unit",
+        ]);
+        $result = Unit::search(1)->toArray('name');
+        OpenFunAPIHelper::apiDone([
+            'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+        ]);
+        return $this->json($result);
     }
 
     /**
@@ -834,6 +898,10 @@ class ApiController extends Pix_Controller
      */
     public function listbyunitAction()
     {
+        OpenFunAPIHelper::checkUsage([
+            'project' => 'pcc',
+            'class' => "listbyunit",
+        ]);
         $oid = strval($_GET['unit_id']);
         $page = intval($_GET['page']) ?: 1;
 
@@ -857,6 +925,9 @@ class ApiController extends Pix_Controller
             $record['url'] = $entity->link();
             $result->records[] = $record;
         }
+        OpenFunAPIHelper::apiDone([
+            'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+        ]);
         return $this->json($result);
     }
 
@@ -925,6 +996,10 @@ class ApiController extends Pix_Controller
      */
     public function tenderAction()
     {
+        OpenFunAPIHelper::checkUsage([
+            'project' => 'pcc',
+            'class' => "tender",
+        ]);
         $oid = strval($_GET['unit_id']);
         $job_number = strval($_GET['job_number']);
 
@@ -949,6 +1024,9 @@ class ApiController extends Pix_Controller
             $record['url'] = $entity->link();
             $result->records[] = $record;
         }
+        OpenFunAPIHelper::apiDone([
+            'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+        ]);
         return $this->json($result);
     }
 }
