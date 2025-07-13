@@ -43,7 +43,7 @@ class APILimiter
             header('HTTP/1.1 429 Too Many Requests', true, 429);
             exit;
         }
-        unlink($path . "/blocking/{$ip}.json");
+        @unlink($path . "/blocking/{$ip}.json");
     }
 }
 
