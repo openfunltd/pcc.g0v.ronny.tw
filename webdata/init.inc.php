@@ -13,6 +13,8 @@ APILimiter::check("/tmp/pcc-api-limiter", '/api');
 
 if (file_exists(__DIR__ . '/config.php')) {
     include(__DIR__ . '/config.php');
+} elseif (file_exists("/srv/config/pcc-api.openfun.app.php")) {
+    include("/srv/config/pcc-api.openfun.app.php");
 }
 
 Pix_Table::setLongQueryTime(3);
