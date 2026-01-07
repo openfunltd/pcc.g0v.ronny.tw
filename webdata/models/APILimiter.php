@@ -14,30 +14,37 @@ class APILimiter
             mkdir($path . '/blocking');
         }
         $ip = $_SERVER['REMOTE_ADDR'];
-        if (!file_exists($path . "/{$ip}.json")) {
+        if (!file_exists($path . "/{$ip}.log")) {
             $ip_data = []; 
         } else {
-            $ip_data = json_decode(file_get_contents($path . "/{$ip}.json"));
+            clearstatcache();
+            $ip_data = array_map(function($l) {
+                return explode(',', trim($l), 2);
+            }, file($path . "/{$ip}.log"));
         }
         if (!is_array($ip_data)) {
             $ip_data = [];
         }
 
         $block = false;
-        if ($ip_data[10] ?? false and $ip_data[10][0] > time() - 10) {
+        $count = count($ip_data);
+        if ($count > 10 and $ip_data[$count - 10][0] > time() - 10) {
             // 如果最近 10 秒有超過 10 次，就擋掉
             $block =  true;
         }
-        if ($ip_data[60] ?? false and $ip_data[60][0] > time() - 60) {
+        if ($count > 60 and $ip_data[$count - 60][0] > time() - 60) {
             // 如果最近 60 秒有超過 60 次，就擋掉
             $block =  true;
         }
-
-        array_unshift($ip_data, [time(), $_SERVER['REQUEST_URI']]);
-        while (count($ip_data) > 100) {
-            array_shift($ip_data);
+        // 如果資料已經超過 200 筆，就刪掉最舊的，避免檔案過大
+        if ($count > 200) {
+            $ip_data = array_slice($ip_data, 100);
+            file_put_contents($path . "/{$ip}.log", implode("\n", array_map(function($entry) {
+                return implode(',', $entry);
+            }, $ip_data)) . "\n");
         }
-        file_put_contents($path . "/{$ip}.json", json_encode($ip_data));
+
+        file_put_contents($path . "/{$ip}.log", implode(",", [time(), $_SERVER['REQUEST_URI']]) . "\n", FILE_APPEND);
         if ($block) {
             file_put_contents($path . "/blocking/{$ip}.json", json_encode($ip_data));
             header('HTTP/1.1 429 Too Many Requests', true, 429);
