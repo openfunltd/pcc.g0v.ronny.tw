@@ -39,6 +39,7 @@ class ApiController extends Pix_Controller
         );
         OpenFunAPIHelper::apiDone([
             'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+            'count' => 1,
         ]);
         return $this->json($result);
     }
@@ -116,6 +117,7 @@ class ApiController extends Pix_Controller
         );
         OpenFunAPIHelper::apiDone([
             'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+            'count' => 1,
         ]);
         return $this->json($result);
     }
@@ -249,6 +251,7 @@ class ApiController extends Pix_Controller
         $result->took = microtime(true) - $start;
         OpenFunAPIHelper::apiDone([
             'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+            'count' => count($result->records),
         ]);
         return $this->json($result);
     }
@@ -307,6 +310,7 @@ class ApiController extends Pix_Controller
         $result->took = microtime(true) - $start;
         OpenFunAPIHelper::apiDone([
             'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+            'count' => count($result->buckets),
         ]);
         return $this->json($result);
     }
@@ -429,6 +433,7 @@ class ApiController extends Pix_Controller
         $result->took = microtime(true) - $start;
         OpenFunAPIHelper::apiDone([
             'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+            'count' => count($result->records),
         ]);
         return $this->json($result);
     }
@@ -576,6 +581,7 @@ class ApiController extends Pix_Controller
         $result->took = microtime(true) - $start;
         OpenFunAPIHelper::apiDone([
             'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+            'count' => count($result->records),
         ]);
         return $this->json($result);
     }
@@ -720,6 +726,7 @@ class ApiController extends Pix_Controller
         $result->took = microtime(true) - $start;
         OpenFunAPIHelper::apiDone([
             'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+            'count' => count($result->records),
         ]);
         return $this->json($result);
     }
@@ -808,6 +815,7 @@ class ApiController extends Pix_Controller
         }
         OpenFunAPIHelper::apiDone([
             'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+            'count' => count($result->records),
         ]);
         return $this->json($result);
     }
@@ -833,6 +841,7 @@ class ApiController extends Pix_Controller
         $result = Unit::search(1)->toArray('name');
         OpenFunAPIHelper::apiDone([
             'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+            'count' => count($result),
         ]);
         return $this->json($result);
     }
@@ -927,6 +936,7 @@ class ApiController extends Pix_Controller
         }
         OpenFunAPIHelper::apiDone([
             'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+            'count' => count($result->records),
         ]);
         return $this->json($result);
     }
@@ -1026,6 +1036,7 @@ class ApiController extends Pix_Controller
         }
         OpenFunAPIHelper::apiDone([
             'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+            'count' => count($result->records)
         ]);
         return $this->json($result);
     }
