@@ -123,6 +123,7 @@ class OpenFunAPIHelper
             'service'      => self::$_options['service']   ?? 'unknown',
             'ip'           => $_SERVER['REMOTE_ADDR']       ?? null,
             'user_agent'   => $_SERVER['HTTP_USER_AGENT']   ?? null,
+            'referer'      => $_SERVER['HTTP_REFERER']       ?? null,
             'user_id'      => $info ? ($info['user_id']    ?? null) : null,
             'token_hash'   => $token_hash,
             'plan'         => $info ? ($info['plan']       ?? null) : null,
