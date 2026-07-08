@@ -8,8 +8,24 @@ class ApiController extends Pix_Controller
     public function init()
     {
         $this->base = (($_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'];
-        header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Methods: GET');
+
+        // 帶 Authorization header 的 credentialed request 不能用 * ，要回傳具體 Origin
+        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+        if ($origin !== '') {
+            header('Access-Control-Allow-Origin: ' . $origin);
+            header('Vary: Origin');
+        } else {
+            header('Access-Control-Allow-Origin: *');
+        }
+        header('Access-Control-Allow-Methods: GET, OPTIONS');
+        header('Access-Control-Allow-Headers: Authorization, Content-Type, Accept');
+        header('Access-Control-Max-Age: 3600');
+
+        // 處理 preflight
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            http_response_code(204);
+            exit;
+        }
     }
 
     /**
