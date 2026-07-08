@@ -61,16 +61,23 @@ class OpenFunAPIHelper
             self::errorJson('Token scope not allowed for this service', 403);
         }
 
-        // allowed_origins check：frontend token 限定 Referer 來源
+        // allowed_origins check：frontend token 限定請求來源
+        // 優先用 Origin header（CORS 請求必送），fallback 到 Referer
         $token_type      = $info['token_type'] ?? 'api';
         $allowed_origins = $info['allowed_origins'] ?? null;
         if ($token_type === 'frontend' && is_array($allowed_origins)) {
-            $referer      = $_SERVER['HTTP_REFERER'] ?? '';
-            $referer_host = $referer !== '' ? (parse_url($referer, PHP_URL_HOST) ?: '') : '';
-            $match        = false;
-            foreach ($allowed_origins as $origin) {
-                $origin_host = parse_url($origin, PHP_URL_HOST) ?: $origin;
-                if ($referer_host !== '' && $referer_host === $origin_host) {
+            $origin_hdr   = $_SERVER['HTTP_ORIGIN']  ?? '';
+            $referer_hdr  = $_SERVER['HTTP_REFERER'] ?? '';
+            $request_host = '';
+            if ($origin_hdr !== '') {
+                $request_host = parse_url($origin_hdr, PHP_URL_HOST) ?: '';
+            } elseif ($referer_hdr !== '') {
+                $request_host = parse_url($referer_hdr, PHP_URL_HOST) ?: '';
+            }
+            $match = false;
+            foreach ($allowed_origins as $allowed) {
+                $allowed_host = parse_url($allowed, PHP_URL_HOST) ?: $allowed;
+                if ($request_host !== '' && $request_host === $allowed_host) {
                     $match = true;
                     break;
                 }
