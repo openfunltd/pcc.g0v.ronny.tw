@@ -26,3 +26,5 @@ if (getenv('DATABASE_URL')) {
 }
 Pix_Table::addStaticResultSetHelper('Pix_Array_Volume');
 
+OpenFunAPIHelper::setUsageLogPath('/srv/data/pcc-api.openfun.app/usage');
+

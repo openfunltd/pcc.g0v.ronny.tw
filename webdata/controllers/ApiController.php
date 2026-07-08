@@ -29,7 +29,7 @@ class ApiController extends Pix_Controller
     public function getinfoAction()
     {
         OpenFunAPIHelper::checkUsage([
-            'project' => 'pcc',
+            'service' => 'pcc-api',
             'class' => "getinfo",
         ]);
         $result = array(
@@ -70,7 +70,7 @@ class ApiController extends Pix_Controller
     public function indexAction()
     {
         OpenFunAPIHelper::checkUsage([
-            'project' => 'pcc',
+            'service' => 'pcc-api',
             'class' => "index",
         ]);
         $result = array(
@@ -196,7 +196,7 @@ class ApiController extends Pix_Controller
     public function searchbycompanyidAction()
     {
         OpenFunAPIHelper::checkUsage([
-            'project' => 'pcc',
+            'service' => 'pcc-api',
             'class' => "searchbycompanyid",
         ]);
         $start = microtime(true);
@@ -281,7 +281,7 @@ class ApiController extends Pix_Controller
     public function searchallspecialbudgetAction()
     {
         OpenFunAPIHelper::checkUsage([
-            'project' => 'pcc',
+            'service' => 'pcc-api',
             'class' => "searchallspecialbudget",
         ]);
         $start = microtime(true);
@@ -379,7 +379,7 @@ class ApiController extends Pix_Controller
     public function searchbyspecialbudgetAction()
     {
         OpenFunAPIHelper::checkUsage([
-            'project' => 'pcc',
+            'service' => 'pcc-api',
             'class' => "searchbyspecialbudget",
         ]);
         $start = microtime(true);
@@ -513,7 +513,7 @@ class ApiController extends Pix_Controller
     public function searchbycompanynameAction()
     {
         OpenFunAPIHelper::checkUsage([
-            'project' => 'pcc',
+            'service' => 'pcc-api',
             'class' => "searchbycompanyname",
         ]);
         $start = microtime(true);
@@ -661,7 +661,7 @@ class ApiController extends Pix_Controller
     public function searchbytitleAction()
     {
         OpenFunAPIHelper::checkUsage([
-            'project' => 'pcc',
+            'service' => 'pcc-api',
             'class' => "searchbytitle",
         ]);
         $start = microtime(true);
@@ -789,7 +789,7 @@ class ApiController extends Pix_Controller
     public function listbydateAction()
     {
         OpenFunAPIHelper::checkUsage([
-            'project' => 'pcc',
+            'service' => 'pcc-api',
             'class' => "listbydate",
         ]);
         $date = intval($_GET['date']);
@@ -835,7 +835,7 @@ class ApiController extends Pix_Controller
     public function unitAction()
     {
         OpenFunAPIHelper::checkUsage([
-            'project' => 'pcc',
+            'service' => 'pcc-api',
             'class' => "unit",
         ]);
         $result = Unit::search(1)->toArray('name');
@@ -908,7 +908,7 @@ class ApiController extends Pix_Controller
     public function listbyunitAction()
     {
         OpenFunAPIHelper::checkUsage([
-            'project' => 'pcc',
+            'service' => 'pcc-api',
             'class' => "listbyunit",
         ]);
         $oid = strval($_GET['unit_id']);
@@ -1007,7 +1007,7 @@ class ApiController extends Pix_Controller
     public function tenderAction()
     {
         OpenFunAPIHelper::checkUsage([
-            'project' => 'pcc',
+            'service' => 'pcc-api',
             'class' => "tender",
         ]);
         $oid = strval($_GET['unit_id']);
