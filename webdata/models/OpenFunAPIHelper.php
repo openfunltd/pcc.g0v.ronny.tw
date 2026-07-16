@@ -55,7 +55,7 @@ class OpenFunAPIHelper
         self::$_token_info = $info;
 
         // scope check：若 token 限制了允許呼叫的服務，確認本服務在列表中
-        $scope   = $info['scope'] ?? null;
+        $scope   = $info['allowed_services'] ?? $info['scope'] ?? null;
         $service = $options['service'] ?? '';
         if (is_array($scope) && $service !== '' && !in_array($service, $scope, true)) {
             self::errorJson('Token scope not allowed for this service', 403);
