@@ -35,13 +35,16 @@ while (true) {
     $proxy_port = 20001 + rand(0, 4);
     curl_setopt($curl, CURLOPT_PROXY, getenv('PROXY_HOST') . ':' . $proxy_port);
     curl_setopt($curl, CURLOPT_PROXYUSERPWD, getenv('PROXY_USER') . ':' . getenv('PROXY_PASS'));
+    curl_setopt($curl, CURLOPT_TIMEOUT, 60);
     curl_setopt($curl, CURLOPT_HTTPHEADER, array(
         'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36',
     ));
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    error_log("crawling {$ymd} : " . $url . " via proxy port {$proxy_port}");
     $output = curl_exec($curl);
     curl_close($curl);
     file_put_contents($target, gzencode($output));
+    touch('heartbeat');
     error_log("crawled {$ymd} : " . strlen($output));
     sleep(1);
 }
@@ -76,6 +79,7 @@ while (true) {
     $proxy_port = 20001 + rand(0, 4);
     curl_setopt($curl, CURLOPT_PROXY, getenv('PROXY_HOST') . ':' . $proxy_port);
     curl_setopt($curl, CURLOPT_PROXYUSERPWD, getenv('PROXY_USER') . ':' . getenv('PROXY_PASS'));
+    curl_setopt($curl, CURLOPT_TIMEOUT, 60);
     //curl_setopt($curl, CURLOPT_INTERFACE, '10.0.200.18');
     curl_setopt($curl, CURLOPT_HTTPHEADER, array(
         'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36',
@@ -90,6 +94,7 @@ while (true) {
         continue;
     }
     file_put_contents($target, gzencode($output));
+    touch('heartbeat');
     error_log("crawled {$ymd} : " . strlen($output));
     sleep(1);
 }

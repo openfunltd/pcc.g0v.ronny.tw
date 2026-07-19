@@ -244,7 +244,6 @@ while ($now >= $end_date) {
         // -H 'Referer: http://web.pcc.gov.tw/prkms/prms-viewDailyTenderListClient.do?root=tps'
         $proxy_port = 20001 + $if_id;
         // set proxy to 'http://{env('PROXY_USER')}:{env('PROXY_PASS')}@{env('PROXY_HOST')}:{proxy_port}'
-        curl_setopt($curl, CURLOPT_PROXY, getenv('PROXY_HOST') . ':' . $proxy_port);
         curl_setopt($curl, CURLOPT_PROXYUSERPWD, getenv('PROXY_USER') . ':' . getenv('PROXY_PASS'));
         curl_setopt($curl, CURLOPT_URL, $url);
         curl_setopt($curl, CURLOPT_TIMEOUT, 300);
@@ -256,6 +255,8 @@ while ($now >= $end_date) {
                 sleep($wait_time);
             }
             $if_id = ($if_id + 1) % $if_count;
+            $proxy_port = 20001 + $if_id;
+            curl_setopt($curl, CURLOPT_PROXY, getenv('PROXY_HOST') . ':' . $proxy_port);
             if (!array_key_exists($if_id, $skip_if) or $skip_if[$if_id] < time() - $wait_time) {
                 unset($skip_if[$if_id]);
                 break;
@@ -299,7 +300,7 @@ while ($now >= $end_date) {
             continue;
         } elseif (strlen($output) == 0) {
             error_log(json_encode($info, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-            error_log("{$ymd} {$record} {$url} failed, retry (if_id={$if_id})");
+            error_log("{$ymd} {$record} {$url} failed, retry (proxy_port={$proxy_port})");
             $skip_if[$if_id] = time(); // 等 30 秒
             //usleep($sleep_time * 10000 / ($if_count - count($skip_if)));
             //sleep(10);
@@ -309,12 +310,13 @@ while ($now >= $end_date) {
 
         if (strlen($output)) {
             file_put_contents($entry_target, gzencode($output));
+            touch('heartbeat');
         } else {
             //error_log("crawled {$ymd} {$seq}/{$total} {$record} " . strlen($output));
             sleep(60);
         }
         fwrite(STDERR, chr(27) . "k{$ymd} {$seq}/{$total}" . chr(27) . "\\");
-        error_log(date('His') . " crawled {$ymd} {$seq}/{$total} {$record} " . strlen($output) . " if_id={$if_id}");
+        error_log(date('His') . " crawled {$ymd} {$seq}/{$total} {$record} " . strlen($output) . " proxy_port={$proxy_port}");
         usleep($sleep_time * 100000 / $if_count);
     }
     error_log("crawled {$ymd} " . $total);
