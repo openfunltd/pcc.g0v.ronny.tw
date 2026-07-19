@@ -9,7 +9,7 @@ $start = $_SERVER['argv'][1] ? strtotime($_SERVER['argv'][1]) - 1 : ($end - 8640
 $date = date('Ymd', $start);
 
 while (true) {
-    $date = Entity::search("date > {$date}")->order("date ASC")->first()->date;
+    $date = (Entity::search("date > {$date}")->order("date ASC")->first()->date ?? false);
     if (!$date) {
         break;
     }
@@ -69,15 +69,21 @@ while (true) {
                         continue;
                     } else if ($k == '是否受機關補助') {
                         $k = '機關補助';
-                        if ($value == '否' or $value == '') {
+                        // 少數舊資料這個欄位存的值前後包了一堆空白/換行（例如 Parser 早期
+                        // 版本沒 trim() 的殘留資料），先 trim 過再判斷，避免誤判成需要
+                        // 補助機關明細陣列的格式
+                        $trimmed_value = is_scalar($value) ? trim($value) : $value;
+                        if ($trimmed_value == '否' or $trimmed_value == '') {
                             $value = [];
                         } elseif (is_scalar($value) and strpos($value, '依法須保密者免填補助機關') !== false) {
                             $value = [];
-                        } elseif ($value == '是') {
+                        } elseif ($trimmed_value == '是') {
                             $value = [];
                             $value[0] = new StdClass;
                             if (property_exists($entity_data, "{$key}:補助金額")) {
-                                if (!preg_match('#^([0-9,]+)元$#', $entity_data->{"{$key}:補助金額"}, $matches)) {
+                                // 少數舊資料數字跟「元」中間夾雜換行/tab（例如 "1,200,000\r\n\t\t元"），先去空白再比對
+                                $grant_amount = preg_replace('#\s+#', '', $entity_data->{"{$key}:補助金額"});
+                                if (!preg_match('#^([0-9,]+)元$#', $grant_amount, $matches)) {
                                     throw new Exception("{$k} 補助金額 not match");
                                 }
                                 $value[0]->{'補助金額'} = intval(str_replace(',', '', $matches[1]));

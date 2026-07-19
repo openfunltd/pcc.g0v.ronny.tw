@@ -383,7 +383,7 @@ class Parser
                         $value = [$value];
                     } elseif ("{$key}" == '是否受機關補助') {
                         if ($doc->getElementById('isGrant')) {
-                            $value = $doc->getElementById('isGrant')->nodeValue;
+                            $value = trim($doc->getElementById('isGrant')->nodeValue);
                             $divnode = $doc->getElementById('isGrant');
                             while ($divnode) {
                                 $divnode = $divnode->nextSibling;
