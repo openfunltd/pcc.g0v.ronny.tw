@@ -9,6 +9,7 @@ $until = $_SERVER['argv'][2] ? strtotime($_SERVER['argv'][2]) : time() - 10 * 86
 
 while (true) {
     $ymd = date('Ymd', $now);
+    touch('heartbeat');
     $year = date('Y', $now);
     $list_source = "list/{$ymd}.html.gz";
     $list_source_np = "list/np-{$ymd}.html.gz";
