@@ -1,0 +1,115 @@
+# 台灣政府採購公告 API — `tw.openfun~api~procurement`
+
+給 AI 閱讀的使用指引。人類可在 https://data.openfun.tw/datasets/tw.openfun~api~procurement 看到資料集說明。
+若需要政府採購法制的背景知識（招標/決標方式、押標金、巨額採購門檻、特別預算法源等），詳見 [knowledge.md](knowledge.md)。
+
+## ⚠️ 開始之前（AI agent 必讀）
+
+**Base URL**：`https://pcc-api.openfun.app/api`
+**認證**：使用 data.openfun.tw 核發的 Bearer Token 可解除流量限制；不帶 Token 仍可呼叫，但可能因超過流量門檻被擋（門檻隨時調整，不保證特定數字）。
+**回應格式**：一律 `application/json`，CORS 完全開放（前端可直接呼叫）。
+
+最簡查詢範例：
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "https://pcc-api.openfun.app/api/getinfo"
+```
+
+**取得 Token 方式（Device Authorization Grant）：**
+```bash
+# 步驟一：取得驗證連結
+curl -X POST https://data.openfun.tw/api/v1/auth/device
+
+# 步驟二：在瀏覽器開啟回應中的 verification_uri_complete，用 Google 帳號登入授權
+
+# 步驟三：輪詢取得 Token（約 10-30 秒後成功）
+curl -X POST https://data.openfun.tw/api/v1/auth/token \
+  -d "device_code=DEVICE_CODE_FROM_STEP1"
+```
+若無 Token，也可在 https://data.openfun.tw/user 登入後從 Dashboard 取得長效 API 金鑰。
+
+禁止用 WebFetch 抓 HTML 頁面，請直接呼叫 API。
+
+## ⚠️ 資料涵蓋範圍與查詢眉角
+
+- **資料涵蓋起始日**：「刊登公報」類公告從 2010-01-02 開始，「不刊登公報」類公告從 2012-06-19 開始，更早期的標案不在資料庫內。
+- **`unit_id` 是機關代碼，不是機關名稱**：呼叫 `listbyunit` / `tender` 前，建議先呼叫 `/api/unit` 或用 `searchbycompanyname`/`searchbytitle` 結果裡的 `unit_id` 取得正確代碼（格式類似 `3.76.53.97.30` 這種點號分隔的階層代碼），不要自己猜代碼。
+- **`columns[]` 參數是「區塊:欄位」的階層 key（用 `:` 分隔）**，例如 `機關資料:聯絡人`、`已公告資料:決標方式`。不同公告類型（決標公告/無法決標公告/財物變賣公告…）欄位不一定存在，指定一個該公告沒有的欄位時，對應值會是 `null`，不會噴錯。
+- **`searchbyspecialbudget` 的 `query` 必須是精確的特別預算名稱**（底層用 exact match 查詢），建議先呼叫 `searchallspecialbudget` 取得所有特別預算名稱清單，再用清單裡的名稱去查，不要自己猜名稱。
+- **分頁大小不一致**：`searchbycompanyname`/`searchbycompanyid`/`searchbytitle`/`searchbyspecialbudget` 每頁 100 筆；`listbyunit` 每頁 1000 筆；`listbydate`/`tender` 不分頁，一次回傳全部符合的筆數。
+
+## 端點與查詢說明
+
+所有端點皆為 `GET`，掛在 `https://pcc-api.openfun.app/api/` 下。
+
+| 方法 | 路徑 | 說明 | 參數 |
+|------|------|------|------|
+| GET | `/api/` | 列出 API 列表 | 無 |
+| GET | `/api/getinfo` | 取得資料狀況（最新/最舊資料時間、公告總數） | 無 |
+| GET | `/api/unit` | 列出全部機關代碼對照（`{unit_id: 機關名稱}`） | 無 |
+| GET | `/api/searchbycompanyname` | 依公司名稱搜尋標案 | `query`（必填，公司名稱）、`page`（選填，預設 1）、`columns[]`（選填） |
+| GET | `/api/searchbycompanyid` | 依公司統一編號搜尋標案 | `query`（必填，統編）、`page`（選填）、`columns[]`（選填） |
+| GET | `/api/searchbytitle` | 依標案名稱搜尋標案 | `query`（必填，標案名稱，空白會被當 AND 切詞）、`page`（選填）、`columns[]`（選填） |
+| GET | `/api/listbydate` | 列出特定日期的標案公告列表 | `date`（必填，`YYYYMMDD`） |
+| GET | `/api/listbyunit` | 列出特定機關的標案公告列表 | `unit_id`（必填，機關代碼）、`page`（選填，每頁 1000 筆） |
+| GET | `/api/tender` | 取得某個標案代碼的完整公告詳細資料（含歷次公告） | `unit_id`（必填）、`job_number`（必填，標案代碼） |
+| GET | `/api/searchallspecialbudget` | 列出資料庫中所有特別預算名稱 | 無 |
+| GET | `/api/searchbyspecialbudget` | 搜尋特定特別預算底下的標案 | `query`（必填，特別預算精確名稱，見上方注意事項）、`page`（選填） |
+
+curl 範例：
+
+```bash
+# 依公司名稱搜尋，並多取兩個詳細欄位
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "https://pcc-api.openfun.app/api/searchbycompanyname?query=開放文化基金會&page=1&columns[]=機關資料:聯絡人&columns[]=已公告資料:決標方式"
+
+# 列出某天所有標案公告
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "https://pcc-api.openfun.app/api/listbydate?date=20230829"
+
+# 取得某個標案代碼在指定機關底下的完整公告歷程
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "https://pcc-api.openfun.app/api/tender?unit_id=A.41&job_number=ndc109050"
+
+# 先查有哪些特別預算，再依名稱查標案
+curl -H "Authorization: Bearer YOUR_TOKEN" "https://pcc-api.openfun.app/api/searchallspecialbudget"
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "https://pcc-api.openfun.app/api/searchbyspecialbudget?query=前瞻基礎建設&page=1"
+```
+
+搜尋類端點（`searchbycompanyname`/`searchbycompanyid`/`searchbytitle`/`searchbyspecialbudget`）回傳格式：
+
+```json
+{
+  "query": "開放文化基金會",
+  "page": 1,
+  "total_records": 304,
+  "total_pages": 4,
+  "took": 0.123,
+  "records": [
+    {
+      "date": "20230829",
+      "filename": "BDM-1-70370443",
+      "brief": { "type": "公告類型", "title": "標案名稱", "companies": { "ids": ["..."], "names": ["..."] } },
+      "job_number": "nwda1120349",
+      "unit_id": "A.17.2.1",
+      "unit_name": "機關名稱",
+      "unit_api_url": "https://pcc-api.openfun.app/api/listbyunit?unit_id=A.17.2.1",
+      "tender_api_url": "https://pcc-api.openfun.app/api/tender?unit_id=A.17.2.1&job_number=nwda1120349",
+      "url": "/index/entry/20230829/BDM-1-70370443"
+    }
+  ]
+}
+```
+
+## 快速參考
+
+| 項目 | 說明 |
+|------|------|
+| Base URL | `https://pcc-api.openfun.app/api` |
+| 認證 | `Authorization: Bearer {token}` 可解除流量限制（不帶也能呼叫） |
+| 取得 Token | https://data.openfun.tw/user |
+| 資料涵蓋起始 | 刊登公報 2010-01-02 起；不刊登公報 2012-06-19 起 |
+| 機關代碼查詢 | `/api/unit` |
+| 特別預算名稱查詢 | `/api/searchallspecialbudget`（用回傳值查 `searchbyspecialbudget`，不要自己猜名稱） |
+| 分頁大小 | 搜尋類 API 每頁 100 筆；`listbyunit` 每頁 1000 筆；`listbydate`/`tender` 不分頁 |
