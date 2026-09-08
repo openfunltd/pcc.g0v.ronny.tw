@@ -1071,7 +1071,7 @@ class ApiController extends Pix_Controller
      * @OA\Get(
      *   path="/api/searchbyrefusedvendor", summary="依公司名稱查詢拒絕往來廠商名單 API",
      *   description="依公司名稱查詢該公司是否曾經有「拒絕往來廠商名單公告」記錄，需要有效的歐噴 token，未帶 token 會回傳 401",
-     *   @OA\Parameter( name="query", in="query", description="公司名稱", required=true, @OA\Schema(type="string"), example="威智精密股份有限公司" ),
+     *   @OA\Parameter( name="query", in="query", description="公司名稱，未帶或空字串會回 400（實際會被驗證，不是單純文件標示必填）", required=true, @OA\Schema(type="string"), example="威智精密股份有限公司" ),
      *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer"), example=1 ),
      *   @OA\Response( response="200", description="依公司名稱查詢拒絕往來廠商名單 API",
      *     @OA\JsonContent( type="object",
@@ -1101,6 +1101,7 @@ class ApiController extends Pix_Controller
      *       ),
      *     ),
      *   ),
+     *   @OA\Response( response="400", description="query 未帶或為空字串" ),
      *   @OA\Response( response="401", description="缺少或無效的歐噴 token" ),
      * )
      */
@@ -1114,8 +1115,12 @@ class ApiController extends Pix_Controller
         $start = microtime(true);
 
         $result = new StdClass;
-        $result->query = strval($_GET['query']);
+        $result->query = trim(strval($_GET['query'] ?? ''));
         $result->page = intval($_GET['page']) ?: 1;
+
+        if ($result->query === '') {
+            OpenFunAPIHelper::errorJson('query 為必填參數（公司名稱），不能空白或省略');
+        }
 
         $cmd = array(
             'query' => array(
@@ -1129,6 +1134,7 @@ class ApiController extends Pix_Controller
             'size' => 100,
             'from' => $result->page * 100 - 100,
             'sort' => array('date' => 'desc'),
+            'track_total_hits' => true,
         );
 
         $prefix = getenv('ELASTIC_PREFIX');
@@ -1220,6 +1226,7 @@ class ApiController extends Pix_Controller
             ),
             'size' => 100,
             'sort' => array('date' => 'desc'),
+            'track_total_hits' => true,
         );
 
         $prefix = getenv('ELASTIC_PREFIX');
