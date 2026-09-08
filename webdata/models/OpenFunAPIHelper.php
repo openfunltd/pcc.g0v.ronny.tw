@@ -38,6 +38,9 @@ class OpenFunAPIHelper
 
         $raw = $_SERVER['HTTP_X_TOKEN_INFO'] ?? '';
         if ($raw === '') {
+            if ($options['require_token'] ?? false) {
+                self::errorJson('此 API 需要歐噴 token，請前往 https://data.openfun.tw/user 免費申請', 401);
+            }
             // guest 請求，無 token；由 nginx 做限流
             return;
         }
