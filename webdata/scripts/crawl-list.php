@@ -6,6 +6,7 @@ date_default_timezone_set('Asia/Taipei');
 
 $now = time();// - 86400;
 // 刊登公報
+$empty_retry_count = 0;
 while (true) {
     $ymd = date('Ymd', $now);
     if ($ymd < 20100102) {
@@ -43,6 +44,19 @@ while (true) {
     error_log("crawling {$ymd} : " . $url . " via proxy port {$proxy_port}");
     $output = curl_exec($curl);
     curl_close($curl);
+    if (strlen($output) == 0) {
+        $empty_retry_count++;
+        if ($empty_retry_count > 5) {
+            error_log("crawling {$ymd} 空結果，已重試 {$empty_retry_count} 次，先跳過這天，之後重跑時靠快取檢查機制再抓一次");
+            $empty_retry_count = 0;
+            continue;
+        }
+        error_log("crawling {$ymd} 空結果，第 {$empty_retry_count} 次重試，sleep 30 秒");
+        sleep(30);
+        $now += 86400;
+        continue;
+    }
+    $empty_retry_count = 0;
     file_put_contents($target, gzencode($output));
     touch('heartbeat');
     error_log("crawled {$ymd} : " . strlen($output));
@@ -51,6 +65,7 @@ while (true) {
 
 $now = time(); // - 86400;
 // 不刊登公報
+$empty_retry_count = 0;
 while (true) {
     $ymd = date('Ymd', $now);
     if ($ymd < 20120619) {
@@ -88,11 +103,18 @@ while (true) {
     $output = curl_exec($curl);
     curl_close($curl);
     if (strlen($output) == 0) {
-        error_log("fail {$ymd}, sleep 30 seconds");
+        $empty_retry_count++;
+        if ($empty_retry_count > 5) {
+            error_log("{$ymd} 空結果，已重試 {$empty_retry_count} 次，先跳過這天，之後重跑時靠快取檢查機制再抓一次");
+            $empty_retry_count = 0;
+            continue;
+        }
+        error_log("fail {$ymd}, 第 {$empty_retry_count} 次重試, sleep 30 seconds");
         sleep(30);
         $now += 86400;
         continue;
     }
+    $empty_retry_count = 0;
     file_put_contents($target, gzencode($output));
     touch('heartbeat');
     error_log("crawled {$ymd} : " . strlen($output));
