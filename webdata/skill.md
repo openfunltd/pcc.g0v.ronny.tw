@@ -37,7 +37,6 @@ curl -X POST https://data.openfun.tw/api/v1/auth/token \
 - **`unit_id` 是機關代碼，不是機關名稱**：呼叫 `listbyunit` / `tender` 前，建議先呼叫 `/api/unit` 或用 `searchbycompanyname`/`searchbytitle` 結果裡的 `unit_id` 取得正確代碼（格式類似 `3.76.53.97.30` 這種點號分隔的階層代碼），不要自己猜代碼。
 - **`columns[]` 參數是「區塊:欄位」的階層 key（用 `:` 分隔）**，例如 `機關資料:聯絡人`、`已公告資料:決標方式`。不同公告類型（決標公告/無法決標公告/財物變賣公告…）欄位不一定存在，指定一個該公告沒有的欄位時，對應值會是 `null`，不會噴錯。
 - **`searchbyspecialbudget` 的 `query` 必須是精確的特別預算名稱**（底層用 exact match 查詢），建議先呼叫 `searchallspecialbudget` 取得所有特別預算名稱清單，再用清單裡的名稱去查，不要自己猜名稱。
-- **標「必填」的 `query` 參數，各端點實際檢查嚴格程度不一樣**：`searchbyrefusedvendor` 已確認會嚴格檢查，沒帶或空字串會直接回 `400`；`searchbycompanyname`/`searchbycompanyid`/`searchbytitle`/`searchbyspecialbudget` 這幾支目前**沒有**做同樣的檢查——沒帶 `query` 不會報錯，而是會被當成萬用字元，回傳資料庫裡「該類型」全部資料，且 `total_records` 這時很容易頂到 Elasticsearch 預設的 10000 筆計數上限（不代表真實總筆數）。呼叫這幾支 API 前務必自行確認 `query` 不是空字串，不要依賴伺服器端擋你。
 - **分頁大小不一致**：`searchbycompanyname`/`searchbycompanyid`/`searchbytitle`/`searchbyspecialbudget`/`searchbyrefusedvendor` 每頁 100 筆；`listbyunit` 每頁 1000 筆；`listbydate`/`tender` 不分頁，一次回傳全部符合的筆數；`listrecentrefusedvendor` 固定回傳最近 100 筆，不分頁。
 - **拒絕往來廠商名單只有廠商名稱，沒有統一編號**：政府採購網「拒絕往來廠商名單公告」原始頁面本身就沒有公布廠商統編，所以 `searchbyrefusedvendor` 只能用公司名稱查，回傳資料裡也不會有廠商統編欄位。
 
@@ -124,7 +123,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 
 `listrecentrefusedvendor` 的 `records` 陣列格式跟上面一樣，但沒有 `query`/`page`/`total_pages` 這幾個欄位（固定回傳最近 100 筆，不分頁）。
 
-**`total_records` 準確度**：`searchbyrefusedvendor`/`listrecentrefusedvendor` 這兩支已明確設定精確計數，`total_records` 一定是真實筆數。其他搜尋類端點（`searchbycompanyname` 等）沒有特別設定，命中筆數一旦超過 Elasticsearch 預設上限（10000），`total_records`/`total_pages` 就會被蓋牌成剛好 10000/100，不代表真實總數——如果查詢條件夠窄（例如指定公司名稱），通常不會踩到；只有在查詢條件很寬鬆（甚至像上面提到的漏帶 `query`）時才容易發生。
+**`total_records` 準確度**：`searchbyrefusedvendor`/`listrecentrefusedvendor` 這兩支已明確設定精確計數，`total_records` 一定是真實筆數。其他搜尋類端點（`searchbycompanyname` 等）沒有特別設定，命中筆數一旦超過 Elasticsearch 預設上限（10000），`total_records`/`total_pages` 就會被蓋牌成剛好 10000/100，不代表真實總數——查詢條件夠窄（例如指定公司名稱）通常不會踩到，只有命中結果本身很多筆時才會發生。
 
 ## 快速參考
 
