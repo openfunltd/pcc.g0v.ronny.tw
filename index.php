@@ -12,6 +12,18 @@ class MyDispatcher extends Pix_Controller_Dispatcher
             readfile(__DIR__ . '/webdata/swagger.json');
             exit;
         }
+        if ($path == '/skill.md') {
+            header('Content-Type: text/markdown; charset=utf-8');
+            header('Access-Control-Allow-Origin: *');
+            readfile(__DIR__ . '/webdata/skill.md');
+            exit;
+        }
+        if ($path == '/knowledge.md') {
+            header('Content-Type: text/markdown; charset=utf-8');
+            header('Access-Control-Allow-Origin: *');
+            readfile(__DIR__ . '/webdata/knowledge.md');
+            exit;
+        }
         return null;
     }
 }

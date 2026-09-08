@@ -130,6 +130,14 @@ class ApiController extends Pix_Controller
                 'url' => $this->base . '/api/searchbyspecialbudget',
                 'description' => '搜尋特定特別預算的標案 query: 特別預算名稱',
             ),
+            array(
+                'url' => $this->base . '/api/searchbyrefusedvendor',
+                'description' => '依公司名稱查詢是否有拒絕往來廠商名單公告記錄（需要歐噴 token）, query: 公司名稱, page: 頁數(1開始)',
+            ),
+            array(
+                'url' => $this->base . '/api/listrecentrefusedvendor',
+                'description' => '列出最近 100 筆拒絕往來廠商名單公告（需要歐噴 token）, 無參數',
+            ),
         );
         OpenFunAPIHelper::apiDone([
             'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
@@ -1053,6 +1061,198 @@ class ApiController extends Pix_Controller
         OpenFunAPIHelper::apiDone([
             'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
             'count' => count($result->records)
+        ]);
+        return $this->json($result);
+    }
+
+    /**
+     * 依公司名稱查詢拒絕往來廠商名單 API（需要歐噴 token）
+     *
+     * @OA\Get(
+     *   path="/api/searchbyrefusedvendor", summary="依公司名稱查詢拒絕往來廠商名單 API",
+     *   description="依公司名稱查詢該公司是否曾經有「拒絕往來廠商名單公告」記錄，需要有效的歐噴 token，未帶 token 會回傳 401",
+     *   @OA\Parameter( name="query", in="query", description="公司名稱", required=true, @OA\Schema(type="string"), example="威智精密股份有限公司" ),
+     *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer"), example=1 ),
+     *   @OA\Response( response="200", description="依公司名稱查詢拒絕往來廠商名單 API",
+     *     @OA\JsonContent( type="object",
+     *       @OA\Property(property="query", type="string", example="威智精密股份有限公司"),
+     *       @OA\Property(property="page", type="integer", example=1),
+     *       @OA\Property(property="total_records", type="integer", example=1),
+     *       @OA\Property(property="total_pages", type="integer", example=1),
+     *       @OA\Property(property="took", type="number", example=0.123),
+     *       @OA\Property(property="records", type="array",
+     *         @OA\Items( type="object",
+     *           @OA\Property(property="date", type="string", example="20260908"),
+     *           @OA\Property(property="filename", type="string", example="RML-1-70008731"),
+     *           @OA\Property(property="brief", type="object",
+     *             @OA\Property(property="type", type="string", example="拒絕往來廠商名單公告"),
+     *             @OA\Property(property="title", type="string", example="機軸半成品等3項"),
+     *           ),
+     *           @OA\Property(property="job_number", type="string", example="JE14282P236"),
+     *           @OA\Property(property="unit_id", type="string", example="3.5.10.100"),
+     *           @OA\Property(property="unit_name", type="string", example="國防部軍備局生產製造中心"),
+     *           @OA\Property(property="unit_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=3.5.10.100"),
+     *           @OA\Property(property="tender_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/tender?unit_id=3.5.10.100&job_number=JE14282P236"),
+     *           @OA\Property(property="unit_url", type="string", example="/index/unit/3.5.10.100"),
+     *           @OA\Property(property="url", type="string", example="/index/entry/20260908/RML-1-70008731"),
+     *         ),
+     *       ),
+     *     ),
+     *   ),
+     *   @OA\Response( response="401", description="缺少或無效的歐噴 token" ),
+     * )
+     */
+    public function searchbyrefusedvendorAction()
+    {
+        OpenFunAPIHelper::checkUsage([
+            'service' => 'pcc-api',
+            'class' => "searchbyrefusedvendor",
+            'require_token' => true,
+        ]);
+        $start = microtime(true);
+
+        $result = new StdClass;
+        $result->query = strval($_GET['query']);
+        $result->page = intval($_GET['page']) ?: 1;
+
+        $cmd = array(
+            'query' => array(
+                'query_string' => array(
+                    'query' => sprintf(
+                        '(type:"拒絕往來廠商名單公告" OR type:"拒絕往來廠商名單更正公告") AND companies.names:"%s"',
+                        $result->query
+                    ),
+                ),
+            ),
+            'size' => 100,
+            'from' => $result->page * 100 - 100,
+            'sort' => array('date' => 'desc'),
+        );
+
+        $prefix = getenv('ELASTIC_PREFIX');
+        $ret = Elastic::dbQuery("/{$prefix}entry/_search", "GET", json_encode($cmd));
+
+        $result->total_records = $ret->hits->total->value;
+        $result->total_pages = ceil($ret->hits->total->value / 100);
+        $result->took = 0;
+        $match_ids = array();
+        $unit_oids = array();
+        foreach ($ret->hits->hits as $hit) {
+            $match_ids[] = explode('-', $hit->_id, 2);
+            $unit_oids[$hit->_source->oid] = $hit->_source->oid;
+        }
+        foreach (Unit::search(1)->searchIn('oid', array_keys($unit_oids)) as $unit) {
+            $unit_oids[$unit->oid] = $unit->name;
+        }
+        $result->records = array();
+        foreach (Entity::search(1)->searchIn(array('date', 'filename'), $match_ids)->order('date DESC') as $entity) {
+            $record = $entity->toArray();
+            $record['unit_id'] = $record['oid'];
+            unset($record['oid']);
+            $record['brief'] = json_decode($record['brief']);
+            $record['unit_name'] = $unit_oids[$record['unit_id']];
+            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit_id=' . urlencode($record['unit_id']);
+            $record['tender_api_url'] = $this->base . '/api/tender?unit_id=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
+            $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
+            $record['url'] = $entity->link();
+            $result->records[] = $record;
+        }
+        $result->took = microtime(true) - $start;
+        OpenFunAPIHelper::apiDone([
+            'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+            'count' => count($result->records),
+        ]);
+        return $this->json($result);
+    }
+
+    /**
+     * 列出最近 100 筆拒絕往來廠商名單公告 API（需要歐噴 token）
+     *
+     * @OA\Get(
+     *   path="/api/listrecentrefusedvendor", summary="列出最近 100 筆拒絕往來廠商名單公告 API",
+     *   description="依公告日期由新到舊排序，列出最近 100 筆拒絕往來廠商名單公告，需要有效的歐噴 token，未帶 token 會回傳 401",
+     *   @OA\Response( response="200", description="列出最近 100 筆拒絕往來廠商名單公告 API",
+     *     @OA\JsonContent( type="object",
+     *       @OA\Property(property="total_records", type="integer", example=100),
+     *       @OA\Property(property="took", type="number", example=0.123),
+     *       @OA\Property(property="records", type="array",
+     *         @OA\Items( type="object",
+     *           @OA\Property(property="date", type="string", example="20260908"),
+     *           @OA\Property(property="filename", type="string", example="RML-1-70008731"),
+     *           @OA\Property(property="brief", type="object",
+     *             @OA\Property(property="type", type="string", example="拒絕往來廠商名單公告"),
+     *             @OA\Property(property="title", type="string", example="機軸半成品等3項"),
+     *           ),
+     *           @OA\Property(property="job_number", type="string", example="JE14282P236"),
+     *           @OA\Property(property="unit_id", type="string", example="3.5.10.100"),
+     *           @OA\Property(property="unit_name", type="string", example="國防部軍備局生產製造中心"),
+     *           @OA\Property(property="unit_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=3.5.10.100"),
+     *           @OA\Property(property="tender_api_url", type="string",
+     *             example="https://pcc.g0v.ronny.tw/api/tender?unit_id=3.5.10.100&job_number=JE14282P236"),
+     *           @OA\Property(property="unit_url", type="string", example="/index/unit/3.5.10.100"),
+     *           @OA\Property(property="url", type="string", example="/index/entry/20260908/RML-1-70008731"),
+     *         ),
+     *       ),
+     *     ),
+     *   ),
+     *   @OA\Response( response="401", description="缺少或無效的歐噴 token" ),
+     * )
+     */
+    public function listrecentrefusedvendorAction()
+    {
+        OpenFunAPIHelper::checkUsage([
+            'service' => 'pcc-api',
+            'class' => "listrecentrefusedvendor",
+            'require_token' => true,
+        ]);
+        $start = microtime(true);
+
+        $result = new StdClass;
+
+        $cmd = array(
+            'query' => array(
+                'query_string' => array(
+                    'query' => '(type:"拒絕往來廠商名單公告" OR type:"拒絕往來廠商名單更正公告")',
+                ),
+            ),
+            'size' => 100,
+            'sort' => array('date' => 'desc'),
+        );
+
+        $prefix = getenv('ELASTIC_PREFIX');
+        $ret = Elastic::dbQuery("/{$prefix}entry/_search", "GET", json_encode($cmd));
+
+        $result->total_records = $ret->hits->total->value;
+        $result->took = 0;
+        $match_ids = array();
+        $unit_oids = array();
+        foreach ($ret->hits->hits as $hit) {
+            $match_ids[] = explode('-', $hit->_id, 2);
+            $unit_oids[$hit->_source->oid] = $hit->_source->oid;
+        }
+        foreach (Unit::search(1)->searchIn('oid', array_keys($unit_oids)) as $unit) {
+            $unit_oids[$unit->oid] = $unit->name;
+        }
+        $result->records = array();
+        foreach (Entity::search(1)->searchIn(array('date', 'filename'), $match_ids)->order('date DESC') as $entity) {
+            $record = $entity->toArray();
+            $record['unit_id'] = $record['oid'];
+            unset($record['oid']);
+            $record['brief'] = json_decode($record['brief']);
+            $record['unit_name'] = $unit_oids[$record['unit_id']];
+            $record['unit_api_url'] = $this->base . '/api/listbyunit?unit_id=' . urlencode($record['unit_id']);
+            $record['tender_api_url'] = $this->base . '/api/tender?unit_id=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
+            $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
+            $record['url'] = $entity->link();
+            $result->records[] = $record;
+        }
+        $result->took = microtime(true) - $start;
+        OpenFunAPIHelper::apiDone([
+            'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+            'count' => count($result->records),
         ]);
         return $this->json($result);
     }
