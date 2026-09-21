@@ -4,6 +4,8 @@ include(__DIR__ . '/../config.php');
 
 date_default_timezone_set('Asia/Taipei');
 
+$fetch_user_agent = getenv('FETCH_USER_AGENT') ?: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0';
+
 $now = time();// - 86400;
 // 刊登公報
 $empty_retry_count = 0;
@@ -29,7 +31,7 @@ while (true) {
 
     $curl = curl_init();
     // curl -interface eth1 'http://web.pcc.gov.tw/prkms/prms-viewTenderStatClient.do?ds=20170628&root=tps' 
-    // -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36' 
+    // -H 'User-Agent: '$FETCH_USER_AGENT' (見 config.php)
     // -H 'Referer: http://web.pcc.gov.tw/prkms/prms-viewDailyTenderListClient.do?root=tps'
     $url = 'https://web.pcc.gov.tw/prkms/tender/common/noticeDate/readPublish?dateStr=' . urlencode($date);
     curl_setopt($curl, CURLOPT_URL, $url);
@@ -38,7 +40,7 @@ while (true) {
     curl_setopt($curl, CURLOPT_PROXYUSERPWD, getenv('PROXY_USER') . ':' . getenv('PROXY_PASS'));
     curl_setopt($curl, CURLOPT_TIMEOUT, 60);
     curl_setopt($curl, CURLOPT_HTTPHEADER, array(
-        'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36',
+        'User-Agent: ' . $fetch_user_agent,
     ));
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
     error_log("crawling {$ymd} : " . $url . " via proxy port {$proxy_port}");
@@ -87,7 +89,7 @@ while (true) {
 
     $curl = curl_init();
     // curl -interface eth1 'http://web.pcc.gov.tw/prkms/prms-viewTenderStatClient.do?ds=20170628&root=tps' 
-    // -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36' 
+    // -H 'User-Agent: '$FETCH_USER_AGENT' (見 config.php)
     // -H 'Referer: http://web.pcc.gov.tw/prkms/prms-viewDailyTenderListClient.do?root=tps'
     $url = 'https://web.pcc.gov.tw/prkms/tender/common/noticeDate/readUnPublish?dateStr=' . urlencode($date);
     curl_setopt($curl, CURLOPT_URL, $url);
@@ -97,7 +99,7 @@ while (true) {
     curl_setopt($curl, CURLOPT_TIMEOUT, 60);
     //curl_setopt($curl, CURLOPT_INTERFACE, '10.0.200.18');
     curl_setopt($curl, CURLOPT_HTTPHEADER, array(
-        'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36',
+        'User-Agent: ' . $fetch_user_agent,
     ));
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
     $output = curl_exec($curl);

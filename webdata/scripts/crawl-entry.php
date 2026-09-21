@@ -4,6 +4,7 @@ include(__DIR__ . '/../config.php');
 $if_count = 5;
 ini_set('memory_limit', '512m');
 date_default_timezone_set('Asia/Taipei');
+$fetch_user_agent = getenv('FETCH_USER_AGENT') ?: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0';
 $now = $_SERVER['argv'][1] ? strtotime($_SERVER['argv'][1]) : time() - 86400;
 $end_date = $_SERVER['argv'][2] ? strtotime($_SERVER['argv'][2]) : 0;
 $sleep_time = 100;
@@ -22,7 +23,7 @@ $hack_captcha = function($content, $if_id) {
     curl_setopt($curl, CURLOPT_PROXY, getenv('PROXY_HOST') . ':' . $proxy_port);
     curl_setopt($curl, CURLOPT_PROXYUSERPWD, getenv('PROXY_USER') . ':' . getenv('PROXY_PASS'));
     curl_setopt($curl, CURLOPT_HTTPHEADER, array(
-        'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36',
+        'User-Agent: ' . (getenv('FETCH_USER_AGENT') ?: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0'),
     ));
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
@@ -107,7 +108,7 @@ $hack_captcha = function($content, $if_id) {
     }
 
     curl_setopt($curl, CURLOPT_HTTPHEADER, array(
-        'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36',
+        'User-Agent: ' . (getenv('FETCH_USER_AGENT') ?: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0'),
         'Referer: https://web.pcc.gov.tw/tps/QueryTender/query/searchTenderDetail',
     ));
     curl_setopt($curl, CURLOPT_URL, 'https://web.pcc.gov.tw/tps/validate/check');
@@ -240,7 +241,7 @@ while ($now >= $end_date) {
         }
         $curl = curl_init();
         // curl -interface eth1 'http://web.pcc.gov.tw/prkms/prms-viewTenderStatClient.do?ds=20170628&root=tps' 
-        // -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36' 
+        // -H 'User-Agent: '$FETCH_USER_AGENT' (見 config.php)
         // -H 'Referer: http://web.pcc.gov.tw/prkms/prms-viewDailyTenderListClient.do?root=tps'
         $proxy_port = 20001 + $if_id;
         // set proxy to 'http://{env('PROXY_USER')}:{env('PROXY_PASS')}@{env('PROXY_HOST')}:{proxy_port}'
@@ -265,7 +266,7 @@ while ($now >= $end_date) {
 
 
         curl_setopt($curl, CURLOPT_HTTPHEADER, array(
-            'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36',
+            'User-Agent: ' . $fetch_user_agent,
             'Referer: http://web.pcc.gov.tw/prkms/prms-viewDailyTenderListClient.do?root=tps',
         ));
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
