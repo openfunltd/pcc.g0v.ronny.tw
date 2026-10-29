@@ -1269,12 +1269,82 @@
                     {
                         "name": "unit_id",
                         "in": "query",
-                        "description": "機關代碼",
-                        "required": true,
+                        "description": "機關代碼（unit_id 與 unit_name 至少要帶一個；兩個都帶時，只列 unit_id 範圍內（include_children 時含下屬機關）名稱符合 unit_name 前綴的機關）",
+                        "required": false,
                         "schema": {
                             "type": "string"
                         },
                         "example": "3.76.53.97.30"
+                    },
+                    {
+                        "name": "unit_name",
+                        "in": "query",
+                        "description": "機關名稱前綴，例如「彰化縣政府」會比對到「彰化縣政府建設處」等，最多比對 500 個機關",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "彰化縣政府"
+                    },
+                    {
+                        "name": "include_children",
+                        "in": "query",
+                        "description": "帶 1 時一併列出下屬機關（機關代碼以「上層代碼.」開頭者）；只帶 unit_name 時，展開每個比對到的機關的下屬機關",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "dept_name",
+                        "in": "query",
+                        "description": "機關資料:單位名稱前綴，例如「水利資源處」也會比對到「水利資源處水利工程科」，縣政府各處沒有自己的機關代碼時用這個區分",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "水利資源處"
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "description": "公告日期下限(YYYYMMDD，含當天)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 20250101
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "description": "公告日期上限(YYYYMMDD，含當天)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 20251231
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "公告類型（完全比對 brief.type）",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "決標公告"
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "每頁筆數(1~1000，預設 1000)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 100
                     },
                     {
                         "name": "page",
@@ -1285,6 +1355,22 @@
                             "type": "integer"
                         },
                         "example": 1
+                    },
+                    {
+                        "name": "columns[]",
+                        "in": "query",
+                        "description": "要額外多顯示詳細欄位",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "example": [
+                            "機關資料:聯絡人",
+                            "已公告資料:決標方式"
+                        ]
                     }
                 ],
                 "responses": {
@@ -1298,6 +1384,10 @@
                                             "type": "integer",
                                             "example": 1
                                         },
+                                        "limit": {
+                                            "type": "integer",
+                                            "example": 1000
+                                        },
                                         "total": {
                                             "type": "integer",
                                             "example": 304
@@ -1310,6 +1400,23 @@
                                             "type": "string",
                                             "example": "機關名稱"
                                         },
+                                        "matched_units": {
+                                            "description": "有帶 unit_name 時才有，比對到的機關",
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "unit_id": {
+                                                        "type": "string",
+                                                        "example": "3.76.47"
+                                                    },
+                                                    "unit_name": {
+                                                        "type": "string",
+                                                        "example": "彰化縣政府"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
                                         "records": {
                                             "type": "array",
                                             "items": {
@@ -1321,6 +1428,21 @@
                                                     "filename": {
                                                         "type": "string",
                                                         "example": "BDM-1-70370443"
+                                                    },
+                                                    "dept_name": {
+                                                        "description": "機關資料:單位名稱",
+                                                        "type": "string",
+                                                        "example": "水利資源處"
+                                                    },
+                                                    "award_amount": {
+                                                        "description": "決標資料:總決標金額（元），沒有或不公開時為 null",
+                                                        "type": "integer",
+                                                        "example": 1416000
+                                                    },
+                                                    "budget_amount": {
+                                                        "description": "預算金額（元），沒有或不公開時為 null",
+                                                        "type": "integer",
+                                                        "example": 1500000
                                                     },
                                                     "brief": {
                                                         "properties": {
@@ -1446,6 +1568,198 @@
                                                     "url": {
                                                         "type": "string",
                                                         "example": "/index/entry/20230829/BDM-1-70370443"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/unitstat": {
+            "get": {
+                "summary": "機關標案統計 API",
+                "description": "統計機關範圍內各年度標案數/決標件數/決標金額、得標廠商排行、出現過的單位名稱。決標件數、決標金額與得標廠商只計「決標公告」，不含更正決標公告與定期彙送",
+                "operationId": "7d6d0c4ecb172bb9b6a1b064e9ff1a5a",
+                "parameters": [
+                    {
+                        "name": "unit_id",
+                        "in": "query",
+                        "description": "機關代碼（unit_id 與 unit_name 至少要帶一個，用法同 listbyunit）",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "3.76.47"
+                    },
+                    {
+                        "name": "unit_name",
+                        "in": "query",
+                        "description": "機關名稱前綴（用法同 listbyunit）",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "彰化縣政府"
+                    },
+                    {
+                        "name": "include_children",
+                        "in": "query",
+                        "description": "帶 1 時含下屬機關（用法同 listbyunit）",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "dept_name",
+                        "in": "query",
+                        "description": "機關資料:單位名稱前綴，例如「水利資源處」也會比對到「水利資源處水利工程科」",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "水利資源處"
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "description": "公告日期下限(YYYYMMDD，含當天)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 20230101
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "description": "公告日期上限(YYYYMMDD，含當天)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 20261231
+                    },
+                    {
+                        "name": "top",
+                        "in": "query",
+                        "description": "得標廠商排行筆數(1~100，預設 20)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "winner_sort",
+                        "in": "query",
+                        "description": "得標廠商排行依據：amount（決標金額合計，預設）或 count（得標件數）",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "amount"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "機關標案統計 API",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "unit_name": {
+                                            "type": "string",
+                                            "example": "彰化縣政府"
+                                        },
+                                        "years": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "year": {
+                                                        "type": "integer",
+                                                        "example": 2025
+                                                    },
+                                                    "tenders": {
+                                                        "description": "標案數（以 job_number 去重）",
+                                                        "type": "integer",
+                                                        "example": 1200
+                                                    },
+                                                    "announcements": {
+                                                        "description": "公告數",
+                                                        "type": "integer",
+                                                        "example": 3500
+                                                    },
+                                                    "awards": {
+                                                        "description": "決標公告件數",
+                                                        "type": "integer",
+                                                        "example": 800
+                                                    },
+                                                    "award_amount": {
+                                                        "description": "決標金額合計（元）",
+                                                        "type": "integer",
+                                                        "example": 1452020436
+                                                    },
+                                                    "award_amount_unknown": {
+                                                        "description": "決標公告中總決標金額不公開或無法解析的件數，未計入 award_amount",
+                                                        "type": "integer",
+                                                        "example": 3
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "winners": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "company_id": {
+                                                        "description": "統編，查不到時為 null",
+                                                        "type": "string",
+                                                        "example": "54747005"
+                                                    },
+                                                    "company_name": {
+                                                        "type": "string",
+                                                        "example": "公司名稱"
+                                                    },
+                                                    "awards": {
+                                                        "description": "得標件數",
+                                                        "type": "integer",
+                                                        "example": 12
+                                                    },
+                                                    "amount": {
+                                                        "description": "決標金額合計（元）",
+                                                        "type": "integer",
+                                                        "example": 123456789
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "dept_names": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "dept_name": {
+                                                        "description": "機關資料:單位名稱，未填時為 null",
+                                                        "type": "string",
+                                                        "example": "水利資源處"
+                                                    },
+                                                    "announcements": {
+                                                        "type": "integer",
+                                                        "example": 8832
+                                                    },
+                                                    "tenders": {
+                                                        "type": "integer",
+                                                        "example": 3000
                                                     }
                                                 },
                                                 "type": "object"
@@ -1669,6 +1983,221 @@
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/api/searchbyrefusedvendor": {
+            "get": {
+                "summary": "依公司名稱查詢拒絕往來廠商名單 API",
+                "description": "依公司名稱查詢該公司是否曾經有「拒絕往來廠商名單公告」記錄，需要有效的歐噴 token，未帶 token 會回傳 401",
+                "operationId": "d06ea71617c19520ed2e4c3af8535785",
+                "parameters": [
+                    {
+                        "name": "query",
+                        "in": "query",
+                        "description": "公司名稱，未帶或空字串會回 400（實際會被驗證，不是單純文件標示必填）",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "威智精密股份有限公司"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "頁數(1開始)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "依公司名稱查詢拒絕往來廠商名單 API",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "query": {
+                                            "type": "string",
+                                            "example": "威智精密股份有限公司"
+                                        },
+                                        "page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "total_records": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "total_pages": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "took": {
+                                            "type": "number",
+                                            "example": 0.123
+                                        },
+                                        "records": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "date": {
+                                                        "type": "string",
+                                                        "example": "20260908"
+                                                    },
+                                                    "filename": {
+                                                        "type": "string",
+                                                        "example": "RML-1-70008731"
+                                                    },
+                                                    "brief": {
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "拒絕往來廠商名單公告"
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "example": "機軸半成品等3項"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "job_number": {
+                                                        "type": "string",
+                                                        "example": "JE14282P236"
+                                                    },
+                                                    "unit_id": {
+                                                        "type": "string",
+                                                        "example": "3.5.10.100"
+                                                    },
+                                                    "unit_name": {
+                                                        "type": "string",
+                                                        "example": "國防部軍備局生產製造中心"
+                                                    },
+                                                    "unit_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=3.5.10.100"
+                                                    },
+                                                    "tender_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/tender?unit_id=3.5.10.100&job_number=JE14282P236"
+                                                    },
+                                                    "unit_url": {
+                                                        "type": "string",
+                                                        "example": "/index/unit/3.5.10.100"
+                                                    },
+                                                    "url": {
+                                                        "type": "string",
+                                                        "example": "/index/entry/20260908/RML-1-70008731"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "query 未帶或為空字串"
+                    },
+                    "401": {
+                        "description": "缺少或無效的歐噴 token"
+                    }
+                }
+            }
+        },
+        "/api/listrecentrefusedvendor": {
+            "get": {
+                "summary": "列出最近 100 筆拒絕往來廠商名單公告 API",
+                "description": "依公告日期由新到舊排序，列出最近 100 筆拒絕往來廠商名單公告，需要有效的歐噴 token，未帶 token 會回傳 401",
+                "operationId": "46721a12d23b80a95b46e7851b56cf13",
+                "responses": {
+                    "200": {
+                        "description": "列出最近 100 筆拒絕往來廠商名單公告 API",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "total_records": {
+                                            "type": "integer",
+                                            "example": 100
+                                        },
+                                        "took": {
+                                            "type": "number",
+                                            "example": 0.123
+                                        },
+                                        "records": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "date": {
+                                                        "type": "string",
+                                                        "example": "20260908"
+                                                    },
+                                                    "filename": {
+                                                        "type": "string",
+                                                        "example": "RML-1-70008731"
+                                                    },
+                                                    "brief": {
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "拒絕往來廠商名單公告"
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "example": "機軸半成品等3項"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "job_number": {
+                                                        "type": "string",
+                                                        "example": "JE14282P236"
+                                                    },
+                                                    "unit_id": {
+                                                        "type": "string",
+                                                        "example": "3.5.10.100"
+                                                    },
+                                                    "unit_name": {
+                                                        "type": "string",
+                                                        "example": "國防部軍備局生產製造中心"
+                                                    },
+                                                    "unit_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/listbyunit?unit_id=3.5.10.100"
+                                                    },
+                                                    "tender_api_url": {
+                                                        "type": "string",
+                                                        "example": "https://pcc.g0v.ronny.tw/api/tender?unit_id=3.5.10.100&job_number=JE14282P236"
+                                                    },
+                                                    "unit_url": {
+                                                        "type": "string",
+                                                        "example": "/index/unit/3.5.10.100"
+                                                    },
+                                                    "url": {
+                                                        "type": "string",
+                                                        "example": "/index/entry/20260908/RML-1-70008731"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "缺少或無效的歐噴 token"
                     }
                 }
             }
