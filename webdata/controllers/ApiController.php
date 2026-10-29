@@ -1157,6 +1157,7 @@ class ApiController extends Pix_Controller
      *           @OA\Property(property="tenders", type="integer", example=3000),
      *         ),
      *       ),
+     *       @OA\Property(property="computed_at", type="string", example="2026-10-29T13:50:00+08:00", description="統計的計算時間，相同參數的結果會快取一天"),
      *     ),
      *   ),
      * )
@@ -1176,6 +1177,24 @@ class ApiController extends Pix_Controller
         if (!in_array($winner_sort, array('amount', 'count'), true)) {
             OpenFunAPIHelper::errorJson('winner_sort 必須是 amount 或 count');
         }
+
+        // 統計一天更新一次就夠，相同參數的結果快取一天，避免大機關每次都要重算好幾秒
+        $cache_params = array('top' => $top, 'winner_sort' => $winner_sort);
+        foreach (array('unit_id', 'unit_name', 'include_children', 'dept_name', 'date_from', 'date_to') as $k) {
+            $cache_params[$k] = strval($_GET[$k] ?? '');
+        }
+        $cache_dir = sys_get_temp_dir() . '/pcc-api-unitstat-cache';
+        $cache_file = $cache_dir . '/' . md5(json_encode($cache_params)) . '.json';
+        if (file_exists($cache_file) and filemtime($cache_file) > time() - 86400
+            and $result = json_decode(@file_get_contents($cache_file))) {
+            $result->took = microtime(true) - $start;
+            OpenFunAPIHelper::apiDone([
+                'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+                'count' => count($result->years),
+            ]);
+            return $this->json($result);
+        }
+
         $filter = $this->_getUnitFilter(false);
         $db = Entity::getDb();
         $scope = "WITH t AS (SELECT date, filename, job_number, dept_name, award_amount, brief->>'type' AS type FROM entity WHERE ("
@@ -1238,6 +1257,14 @@ class ApiController extends Pix_Controller
                 'tenders' => intval($row['tenders']),
             );
         }
+
+        $result->computed_at = date('c');
+        if (!is_dir($cache_dir)) {
+            @mkdir($cache_dir, 0777, true);
+        }
+        $tmp_file = $cache_file . '.' . getmypid() . '.tmp';
+        @file_put_contents($tmp_file, json_encode($result, JSON_UNESCAPED_UNICODE));
+        @rename($tmp_file, $cache_file);
 
         $result->took = microtime(true) - $start;
         OpenFunAPIHelper::apiDone([

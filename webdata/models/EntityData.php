@@ -70,7 +70,7 @@ class EntityData extends Pix_Table
         // 得標廠商名稱只出現在決標品項，統編要從「投標廠商」區塊用名稱對回去
         $name_to_id = array();
         foreach ($data as $k => $v) {
-            if (is_scalar($v) and preg_match('#^投標廠商:(投標廠商\d+):廠商名稱$#u', $k, $matches)) {
+            if (is_scalar($v) and preg_match('#^投標廠商:(投標廠商\d+(?:\(共同投標廠商\))?):廠商名稱$#u', $k, $matches)) {
                 $id_key = "投標廠商:{$matches[1]}:廠商代碼";
                 if (property_exists($data, $id_key) and trim($data->{$id_key}) !== '') {
                     $name_to_id[trim($v)] = trim($data->{$id_key});

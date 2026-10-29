@@ -67,4 +67,6 @@ foreach ($dates as $i => $date) {
     error_log(sprintf("%d (%d/%d) records: %d, winners: %d", $date, $i + 1, count($dates), count($entity_terms), count($winner_terms)));
 }
 
+// 重新寫入的得標廠商統編會回到解析時的樣子，跑完再整批用同名廠商補一次
+EntityWinner::fillCompanyId();
 error_log("done");

@@ -261,7 +261,8 @@ class Parser
                             $value = trim(explode("\n", $value)[0]);
                         }
 
-                        if (preg_match('#^投標廠商\d+$#', $key)) {
+                        // 共同投標廠商要自成一組，不然欄位會蓋掉同序號主投標廠商的名稱、統編
+                        if (preg_match('#^投標廠商\d+(\(共同投標廠商\))?$#u', $key)) {
                             $item_no = $key;
                         } elseif (in_array($key, [
                             '投標廠商家數',

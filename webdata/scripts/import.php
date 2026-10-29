@@ -322,6 +322,7 @@ while ($now >= $end) {
         Entity::getDb()->query("INSERT INTO entity_data (date, filename, data, keys) VALUES " . implode(',', $entity_data_terms));
         if (count($winner_terms)) {
             Entity::getDb()->query("INSERT INTO entity_winner (date, filename, company_name, company_id, amount) VALUES " . implode(',', $winner_terms) . " ON CONFLICT DO NOTHING");
+            EntityWinner::fillCompanyId($ymd);
         }
         error_log("inserted " . count($entity_terms) . " records");
         $entity_terms = array();

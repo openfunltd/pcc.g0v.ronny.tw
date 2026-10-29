@@ -1764,6 +1764,11 @@
                                                 },
                                                 "type": "object"
                                             }
+                                        },
+                                        "computed_at": {
+                                            "description": "統計的計算時間，相同參數的結果會快取一天",
+                                            "type": "string",
+                                            "example": "2026-10-29T13:50:00+08:00"
                                         }
                                     },
                                     "type": "object"
