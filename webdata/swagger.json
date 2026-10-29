@@ -1269,7 +1269,7 @@
                     {
                         "name": "unit_id",
                         "in": "query",
-                        "description": "機關代碼（unit_id 與 unit_name 至少要帶一個；兩個都帶時，只列 unit_id 範圍內（include_children 時含下屬機關）名稱符合 unit_name 前綴的機關）",
+                        "description": "機關代碼，也可以帶人事總處 10 碼機關代碼（例如 A43000000A）；官方新代碼在標案系統沒有資料時，會一併查標案系統沿用的改制前舊代碼，實際查詢的代碼列在 resolved_units（unit_id 與 unit_name 至少要帶一個；兩個都帶時，只列 unit_id 範圍內（include_children 時含下屬機關）名稱符合 unit_name 前綴的機關）",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -1399,6 +1399,23 @@
                                         "unit_name": {
                                             "type": "string",
                                             "example": "機關名稱"
+                                        },
+                                        "resolved_units": {
+                                            "description": "unit_id 是人事總處代碼或改制後的新代碼時才有，實際查詢的機關代碼（含標案系統沿用的舊代碼）",
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "unit_id": {
+                                                        "type": "string",
+                                                        "example": "3.57"
+                                                    },
+                                                    "unit_name": {
+                                                        "type": "string",
+                                                        "example": "行政院大陸委員會"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
                                         },
                                         "matched_units": {
                                             "description": "有帶 unit_name 時才有，比對到的機關",
@@ -1591,7 +1608,7 @@
                     {
                         "name": "unit_id",
                         "in": "query",
-                        "description": "機關代碼（unit_id 與 unit_name 至少要帶一個，用法同 listbyunit）",
+                        "description": "機關代碼或人事總處 10 碼機關代碼（unit_id 與 unit_name 至少要帶一個，用法同 listbyunit）",
                         "required": false,
                         "schema": {
                             "type": "string"

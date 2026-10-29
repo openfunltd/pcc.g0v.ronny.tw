@@ -878,7 +878,8 @@ class ApiController extends Pix_Controller
      * listbyunit / unitstat 共用的範圍參數：unit_id、unit_name、include_children、dept_name、date_from/date_to（及 listbyunit 的 type）
      * 參數錯誤時直接回 400。
      *
-     * @return array conditions（entity 表的 SQL 條件，AND 起來用）、unit_id、matched_units（有帶 unit_name 時比對到的機關）
+     * @return array conditions（entity 表的 SQL 條件，AND 起來用）、unit_id、unit_name、matched_units（有帶 unit_name 時比對到的機關）、
+     *   resolved_units（unit_id 被換成標案系統其他代碼時，實際查詢的機關）
      */
     protected function _getUnitFilter($with_type)
     {
@@ -912,13 +913,27 @@ class ApiController extends Pix_Controller
             }, $oids));
         };
 
+        // unit_id 可以是人事總處 10 碼代碼，或改制後標案系統沒在用的新代碼，另外加上標案系統沿用的舊代碼
+        $resolved = ($oid !== '') ? Unit::resolveUnitIds($oid) : array('unit_ids' => array(), 'name' => null);
+        $oids_in_scope = $resolved['unit_ids'];
+        $resolved_units = null;
+        if ($oids_in_scope !== array($oid) and $oid !== '') {
+            $resolved_units = array();
+            foreach ($oids_in_scope as $i => $o) {
+                $resolved_units[] = array('unit_id' => $o, 'unit_name' => Unit::find($o)->name ?? ($i == 0 ? $resolved['name'] : null));
+            }
+        }
+        $oid_in = function($oids) use ($db) {
+            return 'oid IN (' . implode(',', array_map(function($o) use ($db) { return $db->quoteWithColumn('oid', $o); }, $oids)) . ')';
+        };
+
         $conditions = array();
         $matched_units = null;
         if ($unit_name_prefix !== '') {
             // unit_name 前綴比對到的機關；有帶 unit_id 時只取該機關（include_children 時含下屬機關）範圍內的
             $units = Unit::search('name LIKE ' . $like_prefix($unit_name_prefix));
             if ($oid !== '') {
-                $units = $include_children ? $units->search($oid_with_children(array($oid))) : $units->search(array('oid' => $oid));
+                $units = $units->search($include_children ? $oid_with_children($oids_in_scope) : $oid_in($oids_in_scope));
             }
             $units = $units->order('oid')->limit(501)->toArray('name');
             if (count($units) > 500) {
@@ -934,12 +949,12 @@ class ApiController extends Pix_Controller
             } elseif ($include_children and $oid === '') {
                 $conditions[] = $oid_with_children($oids);
             } else {
-                $conditions[] = 'oid IN (' . implode(',', array_map(function($o) use ($db) { return $db->quoteWithColumn('oid', $o); }, $oids)) . ')';
+                $conditions[] = $oid_in($oids);
             }
         } elseif ($include_children) {
-            $conditions[] = $oid_with_children(array($oid));
+            $conditions[] = $oid_with_children($oids_in_scope);
         } else {
-            $conditions[] = 'oid = ' . $db->quoteWithColumn('oid', $oid);
+            $conditions[] = $oid_in($oids_in_scope);
         }
         if ($dept_name_prefix !== '') {
             $conditions[] = 'dept_name LIKE ' . $like_prefix($dept_name_prefix);
@@ -957,7 +972,9 @@ class ApiController extends Pix_Controller
         return array(
             'conditions' => $conditions,
             'unit_id' => $oid,
+            'unit_name' => $resolved['name'],
             'matched_units' => $matched_units,
+            'resolved_units' => $resolved_units,
         );
     }
 
@@ -965,7 +982,7 @@ class ApiController extends Pix_Controller
      * 列出特定機關的標案公告列表 API
      * @OA\Get(
      *   path="/api/listbyunit", summary="列出特定機關的標案公告列表 API", description="列出特定機關的標案公告列表 API",
-     *   @OA\Parameter( name="unit_id", in="query", description="機關代碼（unit_id 與 unit_name 至少要帶一個；兩個都帶時，只列 unit_id 範圍內（include_children 時含下屬機關）名稱符合 unit_name 前綴的機關）", required=false, @OA\Schema(type="string"), example="3.76.53.97.30") ,
+     *   @OA\Parameter( name="unit_id", in="query", description="機關代碼，也可以帶人事總處 10 碼機關代碼（例如 A43000000A）；官方新代碼在標案系統沒有資料時，會一併查標案系統沿用的改制前舊代碼，實際查詢的代碼列在 resolved_units（unit_id 與 unit_name 至少要帶一個；兩個都帶時，只列 unit_id 範圍內（include_children 時含下屬機關）名稱符合 unit_name 前綴的機關）", required=false, @OA\Schema(type="string"), example="3.76.53.97.30") ,
      *   @OA\Parameter( name="unit_name", in="query", description="機關名稱前綴，例如「彰化縣政府」會比對到「彰化縣政府建設處」等，最多比對 500 個機關", required=false, @OA\Schema(type="string"), example="彰化縣政府" ),
      *   @OA\Parameter( name="include_children", in="query", description="帶 1 時一併列出下屬機關（機關代碼以「上層代碼.」開頭者）；只帶 unit_name 時，展開每個比對到的機關的下屬機關", required=false, @OA\Schema(type="integer"), example=1 ),
      *   @OA\Parameter( name="dept_name", in="query", description="機關資料:單位名稱前綴，例如「水利資源處」也會比對到「水利資源處水利工程科」，縣政府各處沒有自己的機關代碼時用這個區分", required=false, @OA\Schema(type="string"), example="水利資源處" ),
@@ -985,6 +1002,12 @@ class ApiController extends Pix_Controller
      *     @OA\Property(property="total", type="integer", example=304),
      *     @OA\Property(property="total_page", type="integer", example=4),
      *     @OA\Property(property="unit_name", type="string", example="機關名稱"),
+     *     @OA\Property(property="resolved_units", type="array", description="unit_id 是人事總處代碼或改制後的新代碼時才有，實際查詢的機關代碼（含標案系統沿用的舊代碼）",
+     *       @OA\Items( type="object",
+     *         @OA\Property(property="unit_id", type="string", example="3.57"),
+     *         @OA\Property(property="unit_name", type="string", example="行政院大陸委員會"),
+     *       ),
+     *     ),
      *     @OA\Property(property="matched_units", type="array", description="有帶 unit_name 時才有，比對到的機關",
      *       @OA\Items( type="object",
      *         @OA\Property(property="unit_id", type="string", example="3.76.47"),
@@ -1065,7 +1088,10 @@ class ApiController extends Pix_Controller
         $result->limit = $limit;
         $result->total = $entities->count();
         $result->total_page = ceil($result->total / $limit);
-        $result->unit_name = ($oid !== '') ? (Unit::find($oid)->name ?? null) : null;
+        $result->unit_name = $filter['unit_name'];
+        if (!is_null($filter['resolved_units'])) {
+            $result->resolved_units = $filter['resolved_units'];
+        }
         if (!is_null($filter['matched_units'])) {
             $result->matched_units = $filter['matched_units'];
         }
@@ -1121,7 +1147,7 @@ class ApiController extends Pix_Controller
      * @OA\Get(
      *   path="/api/unitstat", summary="機關標案統計 API",
      *   description="統計機關範圍內各年度標案數/決標件數/決標金額、得標廠商排行、出現過的單位名稱。決標件數、決標金額與得標廠商只計「決標公告」，不含更正決標公告與定期彙送",
-     *   @OA\Parameter( name="unit_id", in="query", description="機關代碼（unit_id 與 unit_name 至少要帶一個，用法同 listbyunit）", required=false, @OA\Schema(type="string"), example="3.76.47") ,
+     *   @OA\Parameter( name="unit_id", in="query", description="機關代碼或人事總處 10 碼機關代碼（unit_id 與 unit_name 至少要帶一個，用法同 listbyunit）", required=false, @OA\Schema(type="string"), example="3.76.47") ,
      *   @OA\Parameter( name="unit_name", in="query", description="機關名稱前綴（用法同 listbyunit）", required=false, @OA\Schema(type="string"), example="彰化縣政府" ),
      *   @OA\Parameter( name="include_children", in="query", description="帶 1 時含下屬機關（用法同 listbyunit）", required=false, @OA\Schema(type="integer"), example=1 ),
      *   @OA\Parameter( name="dept_name", in="query", description="機關資料:單位名稱前綴，例如「水利資源處」也會比對到「水利資源處水利工程科」", required=false, @OA\Schema(type="string"), example="水利資源處" ),
@@ -1210,7 +1236,10 @@ class ApiController extends Pix_Controller
         $int_or_null = function($v) { return is_null($v) ? null : intval($v); };
 
         $result = new StdClass;
-        $result->unit_name = ($filter['unit_id'] !== '') ? (Unit::find($filter['unit_id'])->name ?? null) : null;
+        $result->unit_name = $filter['unit_name'];
+        if (!is_null($filter['resolved_units'])) {
+            $result->resolved_units = $filter['resolved_units'];
+        }
         if (!is_null($filter['matched_units'])) {
             $result->matched_units = $filter['matched_units'];
         }

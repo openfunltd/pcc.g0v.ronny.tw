@@ -63,6 +63,7 @@ webdata/
     bulk-import-search.php # entity/entity_data -> Elasticsearch
     init-db.php            # 建立/重建 Elasticsearch index mapping
     backfill-unit.php      # 一次性工具：從既有 entity/entity_data 反查歷史缺漏的機關名稱補進 unit 表
+    build-orgmap.php       # 用人事總處機關代碼表 CSV 產生 webdata/orgmap.json（官方代碼 → 標案系統沿用的改制前舊代碼）
   maps/                  # CNS11643 <-> Unicode 對照表（給 CNS2UTF8 用）
   stdlibs/pixframework/  # 內嵌的 PHP MVC 框架（Pix_Table / Pix_Controller / Pix_Loader...），第三方 vendored 程式碼
   views/                 # 前台頁面模板（.phtml），前台實際上多數功能已搬到 https://github.com/ronnywang/pcc-viewer
@@ -98,7 +99,7 @@ index.php                # 前端控制器；/skill.md、/knowledge.md 在這裡
 
 - **Entity**（`entity` 表，主鍵 `date`+`filename`）：標案的「摘要」記錄。`brief` 欄位存精簡 JSON（type/title/companies），`oid`/`job_number` 供查詢，並提供 `link()`、`getFilename()`、`updateUrl()` 等 helper 把採購網原始（常是 base64 編碼過的）連結，還原/正規化成可直接開啟的公開網址。
 - **EntityData**（`entity_data` 表，同樣主鍵 `date`+`filename`）：標案的「完整」解析結果（Parser 產出的所有 key-value），`keys` 欄位記錄有哪些欄位存在（因為每種公告類型欄位不同）。
-- **Unit**（`unit` 表，主鍵 `oid`）：機關代碼 → 機關名稱對照表。最早由外部提供的靜態 `oidmapping.json`（不在 repo 中）灌入，2017 年後就沒更新過，導致 API 回傳的 `unit_name` 常為 null；2026-07 起改由 `import.php` 在每次匯入時補上新出現的機關代碼（只補不存在的，不覆蓋既有名稱），歷史缺漏則已用 `backfill-unit.php` 補齊（12,494 筆中補了 12,493 筆）。
+- **Unit**（`unit` 表，主鍵 `oid`）：機關代碼 → 機關名稱對照表。最早由外部提供的靜態 `oidmapping.json`（不在 repo 中）灌入，2017 年後就沒更新過，導致 API 回傳的 `unit_name` 常為 null；2026-07 起改由 `import.php` 在每次匯入時補上新出現的機關代碼（只補不存在的，不覆蓋既有名稱），歷史缺漏則已用 `backfill-unit.php` 補齊（12,494 筆中補了 12,493 筆）。標案系統的代碼大多可由人事總處 10 碼機關代碼依規則換算（`Unit::orgCodeToUnitId()`），但機關改制後標案系統常沿用舊代碼（例如大陸委員會 A.43 → 3.57），`webdata/orgmap.json` 記錄這些例外，由 `build-orgmap.php` 從人事總處機關代碼表（`orglist.utf8.csv`，不在 repo 中）的新舊機關代碼欄位產生，代碼表更新時要重跑。
 
 ## Parser 邏輯（webdata/models/Parser.php）
 
