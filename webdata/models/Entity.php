@@ -41,6 +41,10 @@ class Entity extends Pix_Table
         $this->_columns['oid'] = array('type' => 'varchar', 'size' => 64);
         $this->_columns['brief'] = array('type' => 'jsonb');
         $this->_columns['job_number'] = array('type' => 'varchar', 'size' => 64);
+        // 以下由 EntityData::extractStat() 抽出，給 listbyunit / unitstat 篩選與統計用
+        $this->_columns['dept_name'] = array('type' => 'text');
+        $this->_columns['award_amount'] = array('type' => 'bigint');
+        $this->_columns['budget_amount'] = array('type' => 'bigint');
 
         $this->addIndex('oid_jobnumber_date', array('oid', 'job_number', 'date'));
 

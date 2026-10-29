@@ -35,6 +35,7 @@ curl -X POST https://data.openfun.tw/api/v1/auth/token \
 - **query 等參數含中文/非 ASCII 字元時，一定要做 URL encode，不要把原始字串直接接在雙引號 URL 裡給 curl**：`curl "...?query=威智精密股份有限公司"` 這種寫法，curl 不會自動幫你編碼，未編碼的原始 UTF-8 位元組在 HTTP request line 裡是不合法的，伺服器會直接判定為 malformed request 並關閉連線——你會收到**完全空白、沒有任何錯誤訊息**的回應，很難排查。正確寫法是用 `curl -G --data-urlencode "query=威智精密股份有限公司" URL`（範例見下方）。
 - **資料涵蓋起始日**：「刊登公報」類公告從 2010-01-02 開始，「不刊登公報」類公告從 2012-06-19 開始，更早期的標案不在資料庫內。
 - **`unit_id` 是機關代碼，不是機關名稱**：呼叫 `listbyunit` / `tender` 前，建議先呼叫 `/api/unit` 或用 `searchbycompanyname`/`searchbytitle` 結果裡的 `unit_id` 取得正確代碼（格式類似 `3.76.53.97.30` 這種點號分隔的階層代碼），不要自己猜代碼。`listbyunit` 也可以改用 `unit_name` 以機關名稱前綴查（例如 `彰化縣政府` 會比對到 `彰化縣政府建設處` 等各處），但名稱前綴只看名稱，縣立學校等名稱不同的下屬機關不會被比對到；要列出整個機關體系請用 `unit_id` 加 `include_children=1`。
+- **縣市政府的「處」「局」多半沒有自己的機關代碼**：例如彰化縣政府各處的標案都掛在 `3.76.47 彰化縣政府` 底下，只能靠公告裡的「機關資料:單位名稱」（例如 `水利資源處`）區分。`listbyunit`/`unitstat` 用 `dept_name` 參數做前綴比對（`水利資源處` 也會比對到 `水利資源處水利工程科`），各機關實際有哪些單位名稱寫法，可以先用 `unitstat` 的 `dept_names` 清單查。
 - **`columns[]` 參數是「區塊:欄位」的階層 key（用 `:` 分隔）**，例如 `機關資料:聯絡人`、`已公告資料:決標方式`。不同公告類型（決標公告/無法決標公告/財物變賣公告…）欄位不一定存在，指定一個該公告沒有的欄位時，對應值會是 `null`，不會噴錯。
 - **`searchbyspecialbudget` 的 `query` 必須是精確的特別預算名稱**（底層用 exact match 查詢），建議先呼叫 `searchallspecialbudget` 取得所有特別預算名稱清單，再用清單裡的名稱去查，不要自己猜名稱。
 - **分頁大小不一致**：`searchbycompanyname`/`searchbycompanyid`/`searchbytitle`/`searchbyspecialbudget`/`searchbyrefusedvendor` 每頁 100 筆；`listbyunit` 預設每頁 1000 筆（可用 `limit` 調小）；`listbydate`/`tender` 不分頁，一次回傳全部符合的筆數；`listrecentrefusedvendor` 固定回傳最近 100 筆，不分頁。
@@ -53,7 +54,8 @@ curl -X POST https://data.openfun.tw/api/v1/auth/token \
 | GET | `/api/searchbycompanyid` | 依公司統一編號搜尋標案 | `query`（必填，統編）、`page`（選填）、`columns[]`（選填） |
 | GET | `/api/searchbytitle` | 依標案名稱搜尋標案 | `query`（必填，標案名稱，空白會被當 AND 切詞）、`page`（選填）、`columns[]`（選填） |
 | GET | `/api/listbydate` | 列出特定日期的標案公告列表 | `date`（必填，`YYYYMMDD`） |
-| GET | `/api/listbyunit` | 列出特定機關的標案公告列表（依日期新到舊） | `unit_id`（機關代碼）或 `unit_name`（機關名稱前綴，最多比對 500 個機關），至少帶一個，兩個都帶時只列 `unit_id` 範圍內（`include_children=1` 時含下屬機關）名稱符合前綴的機關；`include_children`（選填，`1` 時含下屬機關）、`date_from`/`date_to`（選填，`YYYYMMDD`，含當天）、`type`（選填，公告類型完全比對，例如 `決標公告`）、`limit`（選填，1~1000，預設 1000）、`page`（選填）、`columns[]`（選填） |
+| GET | `/api/listbyunit` | 列出特定機關的標案公告列表（依日期新到舊）。每筆另有 `dept_name`（機關資料:單位名稱）、`award_amount`（總決標金額）、`budget_amount`（預算金額），金額為整數（元），沒有或不公開時為 `null`；有帶 `unit_name` 時頂層另有 `matched_units`（比對到的機關清單） | `unit_id`（機關代碼）或 `unit_name`（機關名稱前綴，最多比對 500 個機關），至少帶一個，兩個都帶時只列 `unit_id` 範圍內（`include_children=1` 時含下屬機關）名稱符合前綴的機關；`include_children`（選填，`1` 時含下屬機關）、`date_from`/`date_to`（選填，`YYYYMMDD`，含當天）、`dept_name`（選填，機關資料:單位名稱前綴）、`type`（選填，公告類型完全比對，例如 `決標公告`）、`limit`（選填，1~1000，預設 1000）、`page`（選填）、`columns[]`（選填） |
+| GET | `/api/unitstat` | 機關標案統計：各年度標案數（以 `job_number` 去重）/公告數/決標件數/決標金額、得標廠商排行（統編、名稱、件數、金額）、範圍內出現過的單位名稱與件數 | 範圍參數同 `listbyunit`（`unit_id`/`unit_name`/`include_children`/`dept_name`/`date_from`/`date_to`）；`top`（選填，得標廠商排行筆數 1~100，預設 20）、`winner_sort`（選填，`amount` 預設或 `count`）。決標件數、金額與得標廠商只計「決標公告」，不含更正決標公告與定期彙送；總決標金額不公開的件數另列在 `award_amount_unknown` |
 | GET | `/api/tender` | 取得某個標案代碼的完整公告詳細資料（含歷次公告） | `unit_id`（必填）、`job_number`（必填，標案代碼） |
 | GET | `/api/searchallspecialbudget` | 列出資料庫中所有特別預算名稱 | 無 |
 | GET | `/api/searchbyspecialbudget` | 搜尋特定特別預算底下的標案 | `query`（必填，特別預算精確名稱，見上方注意事項）、`page`（選填） |

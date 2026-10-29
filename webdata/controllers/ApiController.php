@@ -115,6 +115,10 @@ class ApiController extends Pix_Controller
                 'description' => '列出特定機關的標案公告列表, unit_id: 機關代碼，可透過 /api/unit 取得代碼列表',
             ),
             array(
+                'url' => $this->base . '/api/unitstat',
+                'description' => '機關標案統計（各年度標案數/決標金額、得標廠商排行、單位名稱清單）, 範圍參數同 listbyunit',
+            ),
+            array(
                 'url' => $this->base . '/api/unit',
                 'description' => '列出機關列表，沒有參數',
             ),
@@ -871,12 +875,100 @@ class ApiController extends Pix_Controller
     }
 
     /**
+     * listbyunit / unitstat 共用的範圍參數：unit_id、unit_name、include_children、dept_name、date_from/date_to（及 listbyunit 的 type）
+     * 參數錯誤時直接回 400。
+     *
+     * @return array conditions（entity 表的 SQL 條件，AND 起來用）、unit_id、matched_units（有帶 unit_name 時比對到的機關）
+     */
+    protected function _getUnitFilter($with_type)
+    {
+        $oid = trim(strval($_GET['unit_id'] ?? ''));
+        $unit_name_prefix = trim(strval($_GET['unit_name'] ?? ''));
+        $dept_name_prefix = trim(strval($_GET['dept_name'] ?? ''));
+        $include_children = in_array(strval($_GET['include_children'] ?? ''), array('1', 'true'), true);
+        if ($oid === '' and $unit_name_prefix === '') {
+            OpenFunAPIHelper::errorJson('unit_id 與 unit_name 至少要帶一個');
+        }
+        foreach (array('date_from', 'date_to') as $k) {
+            if (array_key_exists($k, $_GET) and !preg_match('#^\d{8}$#', strval($_GET[$k]))) {
+                OpenFunAPIHelper::errorJson("{$k} 格式必須是 YYYYMMDD");
+            }
+        }
+
+        $db = Entity::getDb();
+        $like_prefix = function($prefix) use ($db) {
+            return $db->quoteWithColumn('', addcslashes($prefix, '\\%_') . '%');
+        };
+        // 機關代碼是點號分隔的階層，下屬機關的代碼以「上層代碼.」開頭。
+        // 用 >= '代碼.' AND < '代碼/'（'/' 是 '.' 的下一個字元）取代 LIKE '代碼.%'，
+        // 才用得到 oid 索引（DB collation 是 C.UTF8，依 code point 排序，兩者等價）
+        $oid_with_children = function($oids) use ($db) {
+            return implode(' OR ', array_map(function($o) use ($db) {
+                return sprintf("(oid = %s OR (oid >= %s AND oid < %s))",
+                    $db->quoteWithColumn('oid', $o),
+                    $db->quoteWithColumn('oid', $o . '.'),
+                    $db->quoteWithColumn('oid', $o . '/')
+                );
+            }, $oids));
+        };
+
+        $conditions = array();
+        $matched_units = null;
+        if ($unit_name_prefix !== '') {
+            // unit_name 前綴比對到的機關；有帶 unit_id 時只取該機關（include_children 時含下屬機關）範圍內的
+            $units = Unit::search('name LIKE ' . $like_prefix($unit_name_prefix));
+            if ($oid !== '') {
+                $units = $include_children ? $units->search($oid_with_children(array($oid))) : $units->search(array('oid' => $oid));
+            }
+            $units = $units->order('oid')->limit(501)->toArray('name');
+            if (count($units) > 500) {
+                OpenFunAPIHelper::errorJson('unit_name 比對到超過 500 個機關，請用更長的前綴，或加上 unit_id 縮小範圍');
+            }
+            $matched_units = array();
+            foreach ($units as $unit_oid => $unit_name) {
+                $matched_units[] = array('unit_id' => strval($unit_oid), 'unit_name' => $unit_name);
+            }
+            $oids = array_map('strval', array_keys($units));
+            if (!$oids) {
+                $conditions[] = '0 = 1';
+            } elseif ($include_children and $oid === '') {
+                $conditions[] = $oid_with_children($oids);
+            } else {
+                $conditions[] = 'oid IN (' . implode(',', array_map(function($o) use ($db) { return $db->quoteWithColumn('oid', $o); }, $oids)) . ')';
+            }
+        } elseif ($include_children) {
+            $conditions[] = $oid_with_children(array($oid));
+        } else {
+            $conditions[] = 'oid = ' . $db->quoteWithColumn('oid', $oid);
+        }
+        if ($dept_name_prefix !== '') {
+            $conditions[] = 'dept_name LIKE ' . $like_prefix($dept_name_prefix);
+        }
+        if (array_key_exists('date_from', $_GET)) {
+            $conditions[] = 'date >= ' . intval($_GET['date_from']);
+        }
+        if (array_key_exists('date_to', $_GET)) {
+            $conditions[] = 'date <= ' . intval($_GET['date_to']);
+        }
+        if ($with_type and strval($_GET['type'] ?? '') !== '') {
+            $conditions[] = "brief->>'type' = " . $db->quoteWithColumn('', strval($_GET['type']));
+        }
+
+        return array(
+            'conditions' => $conditions,
+            'unit_id' => $oid,
+            'matched_units' => $matched_units,
+        );
+    }
+
+    /**
      * 列出特定機關的標案公告列表 API
      * @OA\Get(
      *   path="/api/listbyunit", summary="列出特定機關的標案公告列表 API", description="列出特定機關的標案公告列表 API",
      *   @OA\Parameter( name="unit_id", in="query", description="機關代碼（unit_id 與 unit_name 至少要帶一個；兩個都帶時，只列 unit_id 範圍內（include_children 時含下屬機關）名稱符合 unit_name 前綴的機關）", required=false, @OA\Schema(type="string"), example="3.76.53.97.30") ,
      *   @OA\Parameter( name="unit_name", in="query", description="機關名稱前綴，例如「彰化縣政府」會比對到「彰化縣政府建設處」等，最多比對 500 個機關", required=false, @OA\Schema(type="string"), example="彰化縣政府" ),
      *   @OA\Parameter( name="include_children", in="query", description="帶 1 時一併列出下屬機關（機關代碼以「上層代碼.」開頭者）；只帶 unit_name 時，展開每個比對到的機關的下屬機關", required=false, @OA\Schema(type="integer"), example=1 ),
+     *   @OA\Parameter( name="dept_name", in="query", description="機關資料:單位名稱前綴，例如「水利資源處」也會比對到「水利資源處水利工程科」，縣政府各處沒有自己的機關代碼時用這個區分", required=false, @OA\Schema(type="string"), example="水利資源處" ),
      *   @OA\Parameter( name="date_from", in="query", description="公告日期下限(YYYYMMDD，含當天)", required=false, @OA\Schema(type="integer"), example=20250101 ),
      *   @OA\Parameter( name="date_to", in="query", description="公告日期上限(YYYYMMDD，含當天)", required=false, @OA\Schema(type="integer"), example=20251231 ),
      *   @OA\Parameter( name="type", in="query", description="公告類型（完全比對 brief.type）", required=false, @OA\Schema(type="string"), example="決標公告" ),
@@ -893,10 +985,19 @@ class ApiController extends Pix_Controller
      *     @OA\Property(property="total", type="integer", example=304),
      *     @OA\Property(property="total_page", type="integer", example=4),
      *     @OA\Property(property="unit_name", type="string", example="機關名稱"),
+     *     @OA\Property(property="matched_units", type="array", description="有帶 unit_name 時才有，比對到的機關",
+     *       @OA\Items( type="object",
+     *         @OA\Property(property="unit_id", type="string", example="3.76.47"),
+     *         @OA\Property(property="unit_name", type="string", example="彰化縣政府"),
+     *       ),
+     *     ),
      *     @OA\Property(property="records", type="array",
      *         @OA\Items( type="object",
      *           @OA\Property(property="date", type="string", example="20230829"),
      *           @OA\Property(property="filename", type="string", example="BDM-1-70370443"),
+     *           @OA\Property(property="dept_name", type="string", example="水利資源處", description="機關資料:單位名稱"),
+     *           @OA\Property(property="award_amount", type="integer", example=1416000, description="決標資料:總決標金額（元），沒有或不公開時為 null"),
+     *           @OA\Property(property="budget_amount", type="integer", example=1500000, description="預算金額（元），沒有或不公開時為 null"),
      *           @OA\Property(property="brief", type="object",
      *             @OA\Property(property="type", type="string", example="公告類型"),
      *             @OA\Property(property="title", type="string", example="標案名稱"),
@@ -946,68 +1047,17 @@ class ApiController extends Pix_Controller
             'service' => 'pcc-api',
             'class' => "listbyunit",
         ]);
-        $oid = trim(strval($_GET['unit_id'] ?? ''));
-        $unit_name_prefix = trim(strval($_GET['unit_name'] ?? ''));
-        $include_children = in_array(strval($_GET['include_children'] ?? ''), array('1', 'true'), true);
         $page = intval($_GET['page'] ?? 0) ?: 1;
         $limit = intval($_GET['limit'] ?? 0) ?: 1000;
         if ($limit < 1 or $limit > 1000) {
             OpenFunAPIHelper::errorJson('limit 必須介於 1 到 1000 之間');
         }
-        if ($oid === '' and $unit_name_prefix === '') {
-            OpenFunAPIHelper::errorJson('unit_id 與 unit_name 至少要帶一個');
-        }
-        foreach (array('date_from', 'date_to') as $k) {
-            if (array_key_exists($k, $_GET) and !preg_match('#^\d{8}$#', strval($_GET[$k]))) {
-                OpenFunAPIHelper::errorJson("{$k} 格式必須是 YYYYMMDD");
-            }
-        }
-
-        $db = Entity::getDb();
-        // 機關代碼是點號分隔的階層，下屬機關的代碼以「上層代碼.」開頭。
-        // 用 >= '代碼.' AND < '代碼/'（'/' 是 '.' 的下一個字元）取代 LIKE '代碼.%'，
-        // 才用得到 oid 索引（DB collation 是 C.UTF8，依 code point 排序，兩者等價）
-        $oid_with_children = function($oids) use ($db) {
-            return implode(' OR ', array_map(function($o) use ($db) {
-                return sprintf("(oid = %s OR (oid >= %s AND oid < %s))",
-                    $db->quoteWithColumn('oid', $o),
-                    $db->quoteWithColumn('oid', $o . '.'),
-                    $db->quoteWithColumn('oid', $o . '/')
-                );
-            }, $oids));
-        };
+        $filter = $this->_getUnitFilter(true);
+        $oid = $filter['unit_id'];
 
         $entities = Entity::search(1);
-        if ($unit_name_prefix !== '') {
-            // unit_name 前綴比對到的機關；有帶 unit_id 時只取該機關（include_children 時含下屬機關）範圍內的
-            $units = Unit::search('name LIKE ' . $db->quoteWithColumn('name', addcslashes($unit_name_prefix, '\\%_') . '%'));
-            if ($oid !== '') {
-                $units = $include_children ? $units->search($oid_with_children(array($oid))) : $units->search(array('oid' => $oid));
-            }
-            $oids = array_values($units->limit(501)->toArray('oid'));
-            if (count($oids) > 500) {
-                OpenFunAPIHelper::errorJson('unit_name 比對到超過 500 個機關，請用更長的前綴，或加上 unit_id 縮小範圍');
-            }
-            if (!$oids) {
-                $entities = $entities->search('0 = 1');
-            } elseif ($include_children and $oid === '') {
-                $entities = $entities->search($oid_with_children($oids));
-            } else {
-                $entities = $entities->searchIn('oid', $oids);
-            }
-        } elseif ($include_children) {
-            $entities = $entities->search($oid_with_children(array($oid)));
-        } else {
-            $entities = $entities->search(array('oid' => $oid));
-        }
-        if (array_key_exists('date_from', $_GET)) {
-            $entities = $entities->search('date >= ' . intval($_GET['date_from']));
-        }
-        if (array_key_exists('date_to', $_GET)) {
-            $entities = $entities->search('date <= ' . intval($_GET['date_to']));
-        }
-        if (strval($_GET['type'] ?? '') !== '') {
-            $entities = $entities->search("brief->>'type' = " . $db->quoteWithColumn('oid', strval($_GET['type'])));
+        foreach ($filter['conditions'] as $condition) {
+            $entities = $entities->search($condition);
         }
 
         $result = new StdClass;
@@ -1016,6 +1066,9 @@ class ApiController extends Pix_Controller
         $result->total = $entities->count();
         $result->total_page = ceil($result->total / $limit);
         $result->unit_name = ($oid !== '') ? (Unit::find($oid)->name ?? null) : null;
+        if (!is_null($filter['matched_units'])) {
+            $result->matched_units = $filter['matched_units'];
+        }
         $result->records = array();
 
         $entities = $entities->order('date DESC')->offset($limit * ($page - 1))->limit($limit)->toRowArray();
@@ -1038,6 +1091,9 @@ class ApiController extends Pix_Controller
             $record['unit_id'] = $record['oid'];
             unset($record['oid']);
             $record['brief'] = json_decode($record['brief']);
+            foreach (array('award_amount', 'budget_amount') as $k) {
+                $record[$k] = is_null($record[$k]) ? null : intval($record[$k]);
+            }
             $record['unit_name'] = $unit_oids[$record['unit_id']];
             $record['unit_api_url'] = $this->base . '/api/listbyunit?unit_id=' . urlencode($record['unit_id']);
             $record['tender_api_url'] = $this->base . '/api/tender?unit_id=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
@@ -1056,6 +1112,137 @@ class ApiController extends Pix_Controller
         OpenFunAPIHelper::apiDone([
             'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
             'count' => count($result->records),
+        ]);
+        return $this->json($result);
+    }
+
+    /**
+     * 機關標案統計 API
+     * @OA\Get(
+     *   path="/api/unitstat", summary="機關標案統計 API",
+     *   description="統計機關範圍內各年度標案數/決標件數/決標金額、得標廠商排行、出現過的單位名稱。決標件數、決標金額與得標廠商只計「決標公告」，不含更正決標公告與定期彙送",
+     *   @OA\Parameter( name="unit_id", in="query", description="機關代碼（unit_id 與 unit_name 至少要帶一個，用法同 listbyunit）", required=false, @OA\Schema(type="string"), example="3.76.47") ,
+     *   @OA\Parameter( name="unit_name", in="query", description="機關名稱前綴（用法同 listbyunit）", required=false, @OA\Schema(type="string"), example="彰化縣政府" ),
+     *   @OA\Parameter( name="include_children", in="query", description="帶 1 時含下屬機關（用法同 listbyunit）", required=false, @OA\Schema(type="integer"), example=1 ),
+     *   @OA\Parameter( name="dept_name", in="query", description="機關資料:單位名稱前綴，例如「水利資源處」也會比對到「水利資源處水利工程科」", required=false, @OA\Schema(type="string"), example="水利資源處" ),
+     *   @OA\Parameter( name="date_from", in="query", description="公告日期下限(YYYYMMDD，含當天)", required=false, @OA\Schema(type="integer"), example=20230101 ),
+     *   @OA\Parameter( name="date_to", in="query", description="公告日期上限(YYYYMMDD，含當天)", required=false, @OA\Schema(type="integer"), example=20261231 ),
+     *   @OA\Parameter( name="top", in="query", description="得標廠商排行筆數(1~100，預設 20)", required=false, @OA\Schema(type="integer"), example=20 ),
+     *   @OA\Parameter( name="winner_sort", in="query", description="得標廠商排行依據：amount（決標金額合計，預設）或 count（得標件數）", required=false, @OA\Schema(type="string"), example="amount" ),
+     *   @OA\Response( response="200", description="機關標案統計 API",
+     *     @OA\JsonContent( type="object",
+     *       @OA\Property(property="unit_name", type="string", example="彰化縣政府"),
+     *       @OA\Property(property="years", type="array",
+     *         @OA\Items( type="object",
+     *           @OA\Property(property="year", type="integer", example=2025),
+     *           @OA\Property(property="tenders", type="integer", example=1200, description="標案數（以 job_number 去重）"),
+     *           @OA\Property(property="announcements", type="integer", example=3500, description="公告數"),
+     *           @OA\Property(property="awards", type="integer", example=800, description="決標公告件數"),
+     *           @OA\Property(property="award_amount", type="integer", example=1452020436, description="決標金額合計（元）"),
+     *           @OA\Property(property="award_amount_unknown", type="integer", example=3, description="決標公告中總決標金額不公開或無法解析的件數，未計入 award_amount"),
+     *         ),
+     *       ),
+     *       @OA\Property(property="winners", type="array",
+     *         @OA\Items( type="object",
+     *           @OA\Property(property="company_id", type="string", example="54747005", description="統編，查不到時為 null"),
+     *           @OA\Property(property="company_name", type="string", example="公司名稱"),
+     *           @OA\Property(property="awards", type="integer", example=12, description="得標件數"),
+     *           @OA\Property(property="amount", type="integer", example=123456789, description="決標金額合計（元）"),
+     *         ),
+     *       ),
+     *       @OA\Property(property="dept_names", type="array",
+     *         @OA\Items( type="object",
+     *           @OA\Property(property="dept_name", type="string", example="水利資源處", description="機關資料:單位名稱，未填時為 null"),
+     *           @OA\Property(property="announcements", type="integer", example=8832),
+     *           @OA\Property(property="tenders", type="integer", example=3000),
+     *         ),
+     *       ),
+     *     ),
+     *   ),
+     * )
+     */
+    public function unitstatAction()
+    {
+        OpenFunAPIHelper::checkUsage([
+            'service' => 'pcc-api',
+            'class' => "unitstat",
+        ]);
+        $start = microtime(true);
+        $top = intval($_GET['top'] ?? 0) ?: 20;
+        if ($top < 1 or $top > 100) {
+            OpenFunAPIHelper::errorJson('top 必須介於 1 到 100 之間');
+        }
+        $winner_sort = strval($_GET['winner_sort'] ?? '') ?: 'amount';
+        if (!in_array($winner_sort, array('amount', 'count'), true)) {
+            OpenFunAPIHelper::errorJson('winner_sort 必須是 amount 或 count');
+        }
+        $filter = $this->_getUnitFilter(false);
+        $db = Entity::getDb();
+        $scope = "WITH t AS (SELECT date, filename, job_number, dept_name, award_amount, brief->>'type' AS type FROM entity WHERE ("
+            . implode(') AND (', $filter['conditions']) . ")) ";
+        $fetch_all = function($sql) use ($db) {
+            $rows = array();
+            $res = $db->query($sql);
+            while ($row = $res->fetch_assoc()) {
+                $rows[] = $row;
+            }
+            return $rows;
+        };
+        $int_or_null = function($v) { return is_null($v) ? null : intval($v); };
+
+        $result = new StdClass;
+        $result->unit_name = ($filter['unit_id'] !== '') ? (Unit::find($filter['unit_id'])->name ?? null) : null;
+        if (!is_null($filter['matched_units'])) {
+            $result->matched_units = $filter['matched_units'];
+        }
+
+        $result->years = array();
+        foreach ($fetch_all($scope . "SELECT date / 10000 AS year, count(DISTINCT job_number) AS tenders, count(*) AS announcements,
+            count(*) FILTER (WHERE type = '決標公告') AS awards,
+            sum(award_amount) FILTER (WHERE type = '決標公告') AS award_amount,
+            count(*) FILTER (WHERE type = '決標公告' AND award_amount IS NULL) AS award_amount_unknown
+            FROM t GROUP BY 1 ORDER BY 1") as $row) {
+            $result->years[] = array(
+                'year' => intval($row['year']),
+                'tenders' => intval($row['tenders']),
+                'announcements' => intval($row['announcements']),
+                'awards' => intval($row['awards']),
+                'award_amount' => intval($row['award_amount']),
+                'award_amount_unknown' => intval($row['award_amount_unknown']),
+            );
+        }
+
+        // 同一統編可能有改名，名稱取最近一次決標時的；沒有統編的以名稱分組
+        $result->winners = array();
+        foreach ($fetch_all($scope . "SELECT w.company_id, (array_agg(w.company_name ORDER BY t.date DESC))[1] AS company_name,
+            count(*) AS awards, sum(w.amount) AS amount
+            FROM t JOIN entity_winner w ON w.date = t.date AND w.filename = t.filename
+            WHERE t.type = '決標公告'
+            GROUP BY w.company_id, CASE WHEN w.company_id IS NULL THEN w.company_name END
+            ORDER BY " . ($winner_sort == 'amount' ? 'amount DESC NULLS LAST, awards DESC' : 'awards DESC, amount DESC NULLS LAST') . "
+            LIMIT {$top}") as $row) {
+            $result->winners[] = array(
+                'company_id' => $row['company_id'],
+                'company_name' => $row['company_name'],
+                'awards' => intval($row['awards']),
+                'amount' => $int_or_null($row['amount']),
+            );
+        }
+
+        $result->dept_names = array();
+        foreach ($fetch_all($scope . "SELECT dept_name, count(*) AS announcements, count(DISTINCT job_number) AS tenders
+            FROM t GROUP BY 1 ORDER BY 2 DESC") as $row) {
+            $result->dept_names[] = array(
+                'dept_name' => $row['dept_name'],
+                'announcements' => intval($row['announcements']),
+                'tenders' => intval($row['tenders']),
+            );
+        }
+
+        $result->took = microtime(true) - $start;
+        OpenFunAPIHelper::apiDone([
+            'size' => strlen(json_encode($result, JSON_UNESCAPED_UNICODE)),
+            'count' => count($result->years),
         ]);
         return $this->json($result);
     }

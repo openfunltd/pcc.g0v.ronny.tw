@@ -51,6 +51,7 @@ while ($now >= $end) {
     Entity::getDb()->query("BEGIN");
     $entity_terms = array();
     $entity_data_terms = array();
+    $winner_terms = array();
     $unit_names = array();
 
     foreach ($records as $seq => $record) {
@@ -285,14 +286,27 @@ while ($now >= $end) {
         $brief->companies = $companies;
 
         $keys = array_keys(get_object_vars($obj));
+        $stat = EntityData::extractStat($obj);
 
-        $entity_terms[] = sprintf("(%d, %s, %s, %s, %s)",
+        $entity_terms[] = sprintf("(%d, %s, %s, %s, %s, %s, %s, %s)",
             intval($ymd), // date
             Entity::getDb()->quoteWithColumn('filename', str_replace('.xml', '', $record)),
             Entity::getDb()->quoteWithColumn('oid', $oid),
             Entity::getDb()->quoteWithColumn('brief', json_encode($brief, JSON_UNESCAPED_UNICODE)),
-            Entity::getDb()->quoteWithColumn('job_number', $caseid)
+            Entity::getDb()->quoteWithColumn('job_number', $caseid),
+            is_null($stat['dept_name']) ? 'NULL' : Entity::getDb()->quoteWithColumn('dept_name', $stat['dept_name']),
+            is_null($stat['award_amount']) ? 'NULL' : intval($stat['award_amount']),
+            is_null($stat['budget_amount']) ? 'NULL' : intval($stat['budget_amount'])
         );
+        foreach ($stat['winners'] as $winner) {
+            $winner_terms[] = sprintf("(%d, %s, %s, %s, %s)",
+                intval($ymd), // date
+                Entity::getDb()->quoteWithColumn('filename', str_replace('.xml', '', $record)),
+                Entity::getDb()->quoteWithColumn('company_name', $winner['company_name']),
+                is_null($winner['company_id']) ? 'NULL' : Entity::getDb()->quoteWithColumn('company_id', $winner['company_id']),
+                is_null($winner['amount']) ? 'NULL' : intval($winner['amount'])
+            );
+        }
         $entity_data_terms[] = sprintf("(%d, %s, %s, %s)",
             intval($ymd), // date
             Entity::getDb()->quoteWithColumn('filename', str_replace('.xml', '', $record)),
@@ -303,11 +317,16 @@ while ($now >= $end) {
     if (count($entity_terms)) {
         Entity::getDb()->query("DELETE FROM entity WHERE date = {$ymd}");
         Entity::getDb()->query("DELETE FROM entity_data WHERE date = {$ymd}");
-        Entity::getDb()->query("INSERT INTO entity (date, filename, oid, brief, job_number) VALUES " . implode(',', $entity_terms));
+        Entity::getDb()->query("DELETE FROM entity_winner WHERE date = {$ymd}");
+        Entity::getDb()->query("INSERT INTO entity (date, filename, oid, brief, job_number, dept_name, award_amount, budget_amount) VALUES " . implode(',', $entity_terms));
         Entity::getDb()->query("INSERT INTO entity_data (date, filename, data, keys) VALUES " . implode(',', $entity_data_terms));
+        if (count($winner_terms)) {
+            Entity::getDb()->query("INSERT INTO entity_winner (date, filename, company_name, company_id, amount) VALUES " . implode(',', $winner_terms) . " ON CONFLICT DO NOTHING");
+        }
         error_log("inserted " . count($entity_terms) . " records");
         $entity_terms = array();
         $entity_data_terms = array();
+        $winner_terms = array();
     }
 
     // 補齊 unit 表：機關代碼在 unit 表裡不存在的話，就用這批資料裡看到的機關名稱補上去。
