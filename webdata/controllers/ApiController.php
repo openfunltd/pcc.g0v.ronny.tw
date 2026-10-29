@@ -874,11 +874,22 @@ class ApiController extends Pix_Controller
      * 列出特定機關的標案公告列表 API
      * @OA\Get(
      *   path="/api/listbyunit", summary="列出特定機關的標案公告列表 API", description="列出特定機關的標案公告列表 API",
-     *   @OA\Parameter( name="unit_id", in="query", description="機關代碼", required=true, @OA\Schema(type="string"), example="3.76.53.97.30") ,
+     *   @OA\Parameter( name="unit_id", in="query", description="機關代碼（unit_id 與 unit_name 至少要帶一個；兩個都帶時，只列 unit_id 範圍內（include_children 時含下屬機關）名稱符合 unit_name 前綴的機關）", required=false, @OA\Schema(type="string"), example="3.76.53.97.30") ,
+     *   @OA\Parameter( name="unit_name", in="query", description="機關名稱前綴，例如「彰化縣政府」會比對到「彰化縣政府建設處」等，最多比對 500 個機關", required=false, @OA\Schema(type="string"), example="彰化縣政府" ),
+     *   @OA\Parameter( name="include_children", in="query", description="帶 1 時一併列出下屬機關（機關代碼以「上層代碼.」開頭者）；只帶 unit_name 時，展開每個比對到的機關的下屬機關", required=false, @OA\Schema(type="integer"), example=1 ),
+     *   @OA\Parameter( name="date_from", in="query", description="公告日期下限(YYYYMMDD，含當天)", required=false, @OA\Schema(type="integer"), example=20250101 ),
+     *   @OA\Parameter( name="date_to", in="query", description="公告日期上限(YYYYMMDD，含當天)", required=false, @OA\Schema(type="integer"), example=20251231 ),
+     *   @OA\Parameter( name="type", in="query", description="公告類型（完全比對 brief.type）", required=false, @OA\Schema(type="string"), example="決標公告" ),
+     *   @OA\Parameter( name="limit", in="query", description="每頁筆數(1~1000，預設 1000)", required=false, @OA\Schema(type="integer"), example=100 ),
      *   @OA\Parameter( name="page", in="query", description="頁數(1開始)", required=false, @OA\Schema(type="integer"), example=1 ),
+     *   @OA\Parameter( name="columns[]", in="query", description="要額外多顯示詳細欄位", required=false,
+     *     example={"機關資料:聯絡人", "已公告資料:決標方式"},
+     *     @OA\Schema( type="array", @OA\Items( type="string"),),
+     *   ),
      *   @OA\Response( response="200", description="列出特定機關的標案公告列表 API",
      *   @OA\JsonContent( type="object",
      *     @OA\Property(property="page", type="integer", example=1),
+     *     @OA\Property(property="limit", type="integer", example=1000),
      *     @OA\Property(property="total", type="integer", example=304),
      *     @OA\Property(property="total_page", type="integer", example=4),
      *     @OA\Property(property="unit_name", type="string", example="機關名稱"),
@@ -935,27 +946,111 @@ class ApiController extends Pix_Controller
             'service' => 'pcc-api',
             'class' => "listbyunit",
         ]);
-        $oid = strval($_GET['unit_id']);
-        $page = intval($_GET['page']) ?: 1;
+        $oid = trim(strval($_GET['unit_id'] ?? ''));
+        $unit_name_prefix = trim(strval($_GET['unit_name'] ?? ''));
+        $include_children = in_array(strval($_GET['include_children'] ?? ''), array('1', 'true'), true);
+        $page = intval($_GET['page'] ?? 0) ?: 1;
+        $limit = intval($_GET['limit'] ?? 0) ?: 1000;
+        if ($limit < 1 or $limit > 1000) {
+            OpenFunAPIHelper::errorJson('limit 必須介於 1 到 1000 之間');
+        }
+        if ($oid === '' and $unit_name_prefix === '') {
+            OpenFunAPIHelper::errorJson('unit_id 與 unit_name 至少要帶一個');
+        }
+        foreach (array('date_from', 'date_to') as $k) {
+            if (array_key_exists($k, $_GET) and !preg_match('#^\d{8}$#', strval($_GET[$k]))) {
+                OpenFunAPIHelper::errorJson("{$k} 格式必須是 YYYYMMDD");
+            }
+        }
 
-        $entities = Entity::search(array('oid' => $oid))->order('date DESC')->offset(1000 * ($page - 1))->limit(1000);
-        $unit_name = Unit::find($oid)->name;
+        $db = Entity::getDb();
+        // 機關代碼是點號分隔的階層，下屬機關的代碼以「上層代碼.」開頭。
+        // 用 >= '代碼.' AND < '代碼/'（'/' 是 '.' 的下一個字元）取代 LIKE '代碼.%'，
+        // 才用得到 oid 索引（DB collation 是 C.UTF8，依 code point 排序，兩者等價）
+        $oid_with_children = function($oids) use ($db) {
+            return implode(' OR ', array_map(function($o) use ($db) {
+                return sprintf("(oid = %s OR (oid >= %s AND oid < %s))",
+                    $db->quoteWithColumn('oid', $o),
+                    $db->quoteWithColumn('oid', $o . '.'),
+                    $db->quoteWithColumn('oid', $o . '/')
+                );
+            }, $oids));
+        };
+
+        $entities = Entity::search(1);
+        if ($unit_name_prefix !== '') {
+            // unit_name 前綴比對到的機關；有帶 unit_id 時只取該機關（include_children 時含下屬機關）範圍內的
+            $units = Unit::search('name LIKE ' . $db->quoteWithColumn('name', addcslashes($unit_name_prefix, '\\%_') . '%'));
+            if ($oid !== '') {
+                $units = $include_children ? $units->search($oid_with_children(array($oid))) : $units->search(array('oid' => $oid));
+            }
+            $oids = array_values($units->limit(501)->toArray('oid'));
+            if (count($oids) > 500) {
+                OpenFunAPIHelper::errorJson('unit_name 比對到超過 500 個機關，請用更長的前綴，或加上 unit_id 縮小範圍');
+            }
+            if (!$oids) {
+                $entities = $entities->search('0 = 1');
+            } elseif ($include_children and $oid === '') {
+                $entities = $entities->search($oid_with_children($oids));
+            } else {
+                $entities = $entities->searchIn('oid', $oids);
+            }
+        } elseif ($include_children) {
+            $entities = $entities->search($oid_with_children(array($oid)));
+        } else {
+            $entities = $entities->search(array('oid' => $oid));
+        }
+        if (array_key_exists('date_from', $_GET)) {
+            $entities = $entities->search('date >= ' . intval($_GET['date_from']));
+        }
+        if (array_key_exists('date_to', $_GET)) {
+            $entities = $entities->search('date <= ' . intval($_GET['date_to']));
+        }
+        if (strval($_GET['type'] ?? '') !== '') {
+            $entities = $entities->search("brief->>'type' = " . $db->quoteWithColumn('oid', strval($_GET['type'])));
+        }
 
         $result = new StdClass;
         $result->page = $page;
-        $result->total = count(Entity::search(['oid' => $oid]));
-        $result->total_page = ceil($result->total / 1000);
-        $result->unit_name = $unit_name;
+        $result->limit = $limit;
+        $result->total = $entities->count();
+        $result->total_page = ceil($result->total / $limit);
+        $result->unit_name = ($oid !== '') ? (Unit::find($oid)->name ?? null) : null;
+        $result->records = array();
+
+        $entities = $entities->order('date DESC')->offset($limit * ($page - 1))->limit($limit)->toRowArray();
+        $unit_oids = array();
+        foreach ($entities as $entity) {
+            $unit_oids[$entity->oid] = null;
+        }
+        foreach (Unit::search(1)->searchIn('oid', array_keys($unit_oids)) as $unit) {
+            $unit_oids[$unit->oid] = $unit->name;
+        }
+        $entity_datas = array();
+        if (array_key_exists('columns', $_GET) and $entities) {
+            $ids = array_map(function($e) { return array($e->date, $e->filename); }, $entities);
+            foreach (EntityData::search(1)->searchIn(array('date', 'filename'), $ids) as $entity_data) {
+                $entity_datas[$entity_data->date . '-' . $entity_data->filename] = $entity_data;
+            }
+        }
         foreach ($entities as $entity) {
             $record = $entity->toArray();
             $record['unit_id'] = $record['oid'];
             unset($record['oid']);
             $record['brief'] = json_decode($record['brief']);
-            $record['unit_name'] = $unit_name;
+            $record['unit_name'] = $unit_oids[$record['unit_id']];
             $record['unit_api_url'] = $this->base . '/api/listbyunit?unit_id=' . urlencode($record['unit_id']);
             $record['tender_api_url'] = $this->base . '/api/tender?unit_id=' . urlencode($record['unit_id']) . '&job_number=' . urlencode($record['job_number']);
             $record['unit_url'] = '/index/unit/' . urlencode($record['unit_id']);
             $record['url'] = $entity->link();
+            if (array_key_exists('columns', $_GET)) {
+                $data = new StdClass;
+                if ($entity_data = ($entity_datas[$entity->date . '-' . $entity->filename] ?? null)) {
+                    $data = EntityData::updateURL(json_decode($entity_data->data), $entity);
+                }
+                $keys = (array)$_GET['columns'];
+                $record['detail'] = array_combine($keys, array_map(function($k) use ($data) { return $data->{$k} ?? null; }, $keys));
+            }
             $result->records[] = $record;
         }
         OpenFunAPIHelper::apiDone([

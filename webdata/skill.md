@@ -34,10 +34,10 @@ curl -X POST https://data.openfun.tw/api/v1/auth/token \
 
 - **query 等參數含中文/非 ASCII 字元時，一定要做 URL encode，不要把原始字串直接接在雙引號 URL 裡給 curl**：`curl "...?query=威智精密股份有限公司"` 這種寫法，curl 不會自動幫你編碼，未編碼的原始 UTF-8 位元組在 HTTP request line 裡是不合法的，伺服器會直接判定為 malformed request 並關閉連線——你會收到**完全空白、沒有任何錯誤訊息**的回應，很難排查。正確寫法是用 `curl -G --data-urlencode "query=威智精密股份有限公司" URL`（範例見下方）。
 - **資料涵蓋起始日**：「刊登公報」類公告從 2010-01-02 開始，「不刊登公報」類公告從 2012-06-19 開始，更早期的標案不在資料庫內。
-- **`unit_id` 是機關代碼，不是機關名稱**：呼叫 `listbyunit` / `tender` 前，建議先呼叫 `/api/unit` 或用 `searchbycompanyname`/`searchbytitle` 結果裡的 `unit_id` 取得正確代碼（格式類似 `3.76.53.97.30` 這種點號分隔的階層代碼），不要自己猜代碼。
+- **`unit_id` 是機關代碼，不是機關名稱**：呼叫 `listbyunit` / `tender` 前，建議先呼叫 `/api/unit` 或用 `searchbycompanyname`/`searchbytitle` 結果裡的 `unit_id` 取得正確代碼（格式類似 `3.76.53.97.30` 這種點號分隔的階層代碼），不要自己猜代碼。`listbyunit` 也可以改用 `unit_name` 以機關名稱前綴查（例如 `彰化縣政府` 會比對到 `彰化縣政府建設處` 等各處），但名稱前綴只看名稱，縣立學校等名稱不同的下屬機關不會被比對到；要列出整個機關體系請用 `unit_id` 加 `include_children=1`。
 - **`columns[]` 參數是「區塊:欄位」的階層 key（用 `:` 分隔）**，例如 `機關資料:聯絡人`、`已公告資料:決標方式`。不同公告類型（決標公告/無法決標公告/財物變賣公告…）欄位不一定存在，指定一個該公告沒有的欄位時，對應值會是 `null`，不會噴錯。
 - **`searchbyspecialbudget` 的 `query` 必須是精確的特別預算名稱**（底層用 exact match 查詢），建議先呼叫 `searchallspecialbudget` 取得所有特別預算名稱清單，再用清單裡的名稱去查，不要自己猜名稱。
-- **分頁大小不一致**：`searchbycompanyname`/`searchbycompanyid`/`searchbytitle`/`searchbyspecialbudget`/`searchbyrefusedvendor` 每頁 100 筆；`listbyunit` 每頁 1000 筆；`listbydate`/`tender` 不分頁，一次回傳全部符合的筆數；`listrecentrefusedvendor` 固定回傳最近 100 筆，不分頁。
+- **分頁大小不一致**：`searchbycompanyname`/`searchbycompanyid`/`searchbytitle`/`searchbyspecialbudget`/`searchbyrefusedvendor` 每頁 100 筆；`listbyunit` 預設每頁 1000 筆（可用 `limit` 調小）；`listbydate`/`tender` 不分頁，一次回傳全部符合的筆數；`listrecentrefusedvendor` 固定回傳最近 100 筆，不分頁。
 - **拒絕往來廠商名單只有廠商名稱，沒有統一編號**：政府採購網「拒絕往來廠商名單公告」原始頁面本身就沒有公布廠商統編，所以 `searchbyrefusedvendor` 只能用公司名稱查，回傳資料裡也不會有廠商統編欄位。
 
 ## 端點與查詢說明
@@ -53,7 +53,7 @@ curl -X POST https://data.openfun.tw/api/v1/auth/token \
 | GET | `/api/searchbycompanyid` | 依公司統一編號搜尋標案 | `query`（必填，統編）、`page`（選填）、`columns[]`（選填） |
 | GET | `/api/searchbytitle` | 依標案名稱搜尋標案 | `query`（必填，標案名稱，空白會被當 AND 切詞）、`page`（選填）、`columns[]`（選填） |
 | GET | `/api/listbydate` | 列出特定日期的標案公告列表 | `date`（必填，`YYYYMMDD`） |
-| GET | `/api/listbyunit` | 列出特定機關的標案公告列表 | `unit_id`（必填，機關代碼）、`page`（選填，每頁 1000 筆） |
+| GET | `/api/listbyunit` | 列出特定機關的標案公告列表（依日期新到舊） | `unit_id`（機關代碼）或 `unit_name`（機關名稱前綴，最多比對 500 個機關），至少帶一個，兩個都帶時只列 `unit_id` 範圍內（`include_children=1` 時含下屬機關）名稱符合前綴的機關；`include_children`（選填，`1` 時含下屬機關）、`date_from`/`date_to`（選填，`YYYYMMDD`，含當天）、`type`（選填，公告類型完全比對，例如 `決標公告`）、`limit`（選填，1~1000，預設 1000）、`page`（選填）、`columns[]`（選填） |
 | GET | `/api/tender` | 取得某個標案代碼的完整公告詳細資料（含歷次公告） | `unit_id`（必填）、`job_number`（必填，標案代碼） |
 | GET | `/api/searchallspecialbudget` | 列出資料庫中所有特別預算名稱 | 無 |
 | GET | `/api/searchbyspecialbudget` | 搜尋特定特別預算底下的標案 | `query`（必填，特別預算精確名稱，見上方注意事項）、`page`（選填） |
@@ -136,4 +136,4 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 | 機關代碼查詢 | `/api/unit` |
 | 特別預算名稱查詢 | `/api/searchallspecialbudget`（用回傳值查 `searchbyspecialbudget`，不要自己猜名稱） |
 | 拒絕往來廠商名單查詢 | `/api/searchbyrefusedvendor`（只能用公司名稱查，無統編欄位）、`/api/listrecentrefusedvendor`（最近 100 筆） |
-| 分頁大小 | 搜尋類 API 每頁 100 筆；`listbyunit` 每頁 1000 筆；`listbydate`/`tender`/`listrecentrefusedvendor` 不分頁 |
+| 分頁大小 | 搜尋類 API 每頁 100 筆；`listbyunit` 預設每頁 1000 筆（`limit` 可調 1~1000）；`listbydate`/`tender`/`listrecentrefusedvendor` 不分頁 |
